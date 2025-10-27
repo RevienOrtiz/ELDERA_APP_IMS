@@ -22,45 +22,6 @@
                 </div>
                 
                 <div class="form-content">
-                <!-- Required Fields Notice -->
-                <div class="alert alert-info mb-4" style="background-color: #e3f2fd; border: 1px solid #2196f3; color: #1976d2;">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>Note:</strong> Fields marked with <span class="required-field">*</span> are required and must be filled out.
-                </div>
-                
-                <!-- Google Vision OCR Panel -->
-                <div class="row mb-4">
-                    <div class="col-md-12">
-                        <div class="ocr-panel" style="background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 15px; margin-bottom: 20px; border: 2px solid #e31575;">
-                            <h4 style="color: #e31575; margin-bottom: 15px; font-size: 18px; text-align: center;">
-                                <i class="fas fa-file-alt me-2"></i>Form Scanner - Google Vision OCR
-                            </h4>
-                            <p class="small text-muted mb-3">Upload a completed form to automatically fill the fields using Google Vision OCR.</p>
-                            
-                            <div class="mb-3">
-                                <label for="ocrFileUpload" class="form-label small">Upload Form Image</label>
-                                <input type="file" class="form-control form-control-sm" id="ocrFileUpload" accept="image/*">
-                            </div>
-                            
-                            <button type="button" id="processOcrBtn" class="btn btn-primary btn-sm w-100" style="background-color: #e31575; border-color: #e31575;">
-                                <i class="fas fa-magic me-2"></i>Scan & Auto-fill
-                            </button>
-                            
-                            <div id="ocrStatus" class="mt-3" style="display: none;">
-                                <div class="progress" style="height: 10px;">
-                                    <div id="ocrProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%; background-color: #e31575;"></div>
-                                </div>
-                                <p id="ocrStatusText" class="small text-muted mt-2 mb-0">Processing...</p>
-                            </div>
-                            
-                            <div id="ocrResults" class="mt-3" style="display: none;">
-                                <h6 class="mb-2">Extracted Information:</h6>
-                                <div class="small" id="ocrResultsList" style="max-height: 200px; overflow-y: auto;"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
                 <form method="POST" action="{{ route('seniors.store') }}" enctype="multipart/form-data">
                     @csrf
 
@@ -68,20 +29,56 @@
                 <div class="form-step active" id="step1">
                 <div class="form-section-content">
 
+                    <!-- OCR Scan Panel - Minimal (Only on Step 1) -->
+                    <div class="ocr-minimal-panel mb-4">
+                        <div class="ocr-minimal-header">
+                            <i class="fas fa-wand-magic-sparkles"></i>
+                            <span>Quick Scan</span>
+                            <small class="ocr-hint">Auto-fill form from document</small>
+                        </div>
+                        <div class="ocr-minimal-content">
+                            <div class="ocr-file-input-wrapper">
+                                <input type="file" class="ocr-file-input" id="ocrFileUpload" name="ocr_document[]" accept=".jpg,.jpeg,.png,.pdf" multiple>
+                                <label for="ocrFileUpload" class="ocr-file-label">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span id="ocrFileText">Choose files or drag here</span>
+                                </label>
+                            </div>
+                            <button type="button" id="processOcrBtn" class="ocr-scan-btn" onclick="handleOcrScan()" disabled>
+                                <i class="fas fa-magic"></i>
+                                <span>Scan</span>
+                            </button>
+                        </div>
+                        <div id="ocrProgressContainer" class="ocr-progress-minimal d-none">
+                            <div class="ocr-progress-bar-minimal">
+                                <div id="ocrProgressBar" class="ocr-progress-fill-minimal"></div>
+                            </div>
+                            <span id="ocrProgressText" class="ocr-progress-text-minimal">0%</span>
+                        </div>
+                        <div id="ocrStatus" class="ocr-status-minimal"></div>
+                        <div id="ocrResultsContainer" class="ocr-results-minimal d-none">
+                            <i class="fas fa-check-circle"></i>
+                            <span id="ocrResultsSummary">Done!</span>
+                        </div>
+                        <div id="selectedFilesContainer" class="ocr-files-list d-none">
+                            <div id="selectedFilesList"></div>
+                        </div>
+                    </div>
+
                     <div class="mb-5">
                         <label class="form-label fw-bold mb-3" style="font-size: 16px; color: #2c3e50; font-weight: 700; letter-spacing: 0.3px;">1. Name of Senior Citizen</label>
                         <div class="row g-4">
                             <div class="col-md-3">
-                                <label class="form-label small">Last Name *</label>
+                                <label class="form-label small">Last Name <span style="color: red;">*</span></label>
                                 <input type="text" name="last_name" class="form-control form-control-sm" placeholder="Last Name" required>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label small">First Name *</label>
+                                <label class="form-label small">First Name <span style="color: red;">*</span></label>
                                 <input type="text" name="first_name" class="form-control form-control-sm" placeholder="First Name" required>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label small">Middle Name *</label>
-                                <input type="text" name="middle_name" class="form-control form-control-sm" placeholder="Middle Name" required>
+                                <label class="form-label small">Middle Name</label>
+                                <input type="text" name="middle_name" class="form-control form-control-sm" placeholder="Middle Name">
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label small">Name Extension</label>
@@ -107,25 +104,25 @@
                         <label class="form-label fw-bold mb-3" style="font-size: 16px; color: #2c3e50; font-weight: 700; letter-spacing: 0.3px;">2. Address</label>
                         <div class="row g-4 mb-4">
                             <div class="col-md-3">
-                                <label class="form-label small">Region *</label>
+                                <label class="form-label small">Region <span style="color: red;">*</span></label>
                                 <select name="region" class="form-select form-select-sm" required>
                                    <option value="Region I">Region I - Ilocos Region</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label small">Province *</label>
+                                <label class="form-label small">Province <span style="color: red;">*</span></label>
                                 <select name="province" class="form-select form-select-sm" required>
                                     <option value="Pangasinan" selected>Pangasinan</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label small">City *</label>
+                                <label class="form-label small">City <span style="color: red;">*</span></label>
                                 <select name="city" class="form-select form-select-sm" required>
                                     <option value="Lingayen" selected>Lingayen</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label small">Barangay *</label>
+                                <label class="form-label small">Barangay <span style="color: red;">*</span></label>
                                 <select name="barangay" class="form-select form-select-sm" required>
                                     <option value="">Select Barangay</option>
                                     <option value="aliwekwek">Aliwekwek</option>
@@ -165,8 +162,8 @@
                         </div>
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label small">House No./Zone/Purok/Sitio *</label>
-                                <input type="text" name="residence" class="form-control form-control-sm" placeholder="House No./Zone/Purok/Sitio" required>
+                                <label class="form-label small">House No./Zone/Purok/Sitio</label>
+                                <input type="text" name="residence" class="form-control form-control-sm" placeholder="House No./Zone/Purok/Sitio">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small">Street</label>
@@ -178,19 +175,20 @@
 
                     <div class="mb-4">
                        <div class="col-md-3">
-                             <label class="form-label fw-bold">3. Date of Birth *</label>
-                            <input type="date" name="date_of_birth" class="form-control form-control-sm" required>
+                             <label class="form-label fw-bold">3. Date of Birth <span style="color: red;">*</span>  <small class="text-muted" style="font-size: 11px;">Must be 60 years or older</small></label>
+                            <input type="date" name="date_of_birth" id="date_of_birth" class="form-control form-control-sm" required>
+                           
                         </div>
                     </div>
 
 
                     <div class="row g-3 mb-4">
                         <div class="col-md-3">
-                            <label class="form-label small">4. Place of Birth *</label>
+                            <label class="form-label small">4. Place of Birth <span style="color: red;">*</span></label>
                             <input type="text" name="birth_place" class="form-control form-control-sm" placeholder="Place of Birth" required>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label small">5. Marital Status *</label>
+                            <label class="form-label small">5. Marital Status <span style="color: red;">*</span></label>
                             <select name="marital_status" class="form-select form-select-sm" required>
                                 <option value="">Select Marital Status</option>
                                 <option value="Single">Single</option>
@@ -201,7 +199,7 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label small">6. Gender *</label>
+                            <label class="form-label small">6. Gender <span style="color: red;">*</span></label>
                             <select name="sex" class="form-select form-select-sm" required>
                                 <option value="">Select</option>
                                 <option value="Male">Male</option>
@@ -209,7 +207,7 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label small">7. Contact Number *</label>
+                            <label class="form-label small">7. Contact Number <span style="color: red;">*</span></label>
                             <input type="tel" name="contact_number" class="form-control form-control-sm" placeholder="Contact Number" required>
                         </div>
                     </div>
@@ -217,8 +215,8 @@
 
                     <div class="row g-3 mb-4">
                         <div class="col-md-3">
-                            <label class="form-label small">8. Email Address *</label>
-                            <input type="email" name="email" class="form-control form-control-sm" placeholder="Email Address" required>
+                            <label class="form-label small">8. Email Address</label>
+                            <input type="email" name="email" class="form-control form-control-sm" placeholder="Email Address">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small">9. Religion</label>
@@ -236,15 +234,15 @@
                             <input type="text" name="ethnic_origin" class="form-control form-control-sm" placeholder="Ethnic Origin">
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label small">11. Language Spoken *</label>
-                            <input type="text" name="language" class="form-control form-control-sm" placeholder="Language Spoken" required>
+                            <label class="form-label small">11. Language Spoken</label>
+                            <input type="text" name="language" class="form-control form-control-sm" placeholder="Language Spoken">
                         </div>
                     </div>
 
 
                     <div class="row g-3 mb-3">
                         <div class="col-md-4">
-                            <label class="form-label small">12. OSCA ID No. *</label>
+                            <label class="form-label small">12. OSCA ID No. <span style="color: red;">*</span></label>
                             <input type="text" name="osca_id" class="form-control form-control-sm" placeholder="OSCA ID Number" required>
                         </div>
                         <div class="col-md-4">
@@ -287,8 +285,8 @@
                             <input type="text" name="employment" class="form-control form-control-sm" placeholder="Specify">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small">20. Has Pension</label>
-                            <select name="has_pension" class="form-select form-select-sm">
+                            <label class="form-label small">20. Has Pension<span style="color: red;">*</span></label>
+                            <select name="has_pension" class="form-select form-select-sm" required>
                                 <option value="">Select</option>
                                 <option value="Yes">Yes</option>
                                 <option value="No">No</option>
@@ -703,7 +701,7 @@
                             <div class="mb-4">
                                 <label class="input-label">37. Medical Concern</label>
                                 <div class="mt-3">
-                                    <label class="field-label">Blood Type*</label>
+                                    <label class="field-label">Blood Type</label>
                                     <select name="blood_type" class="form-control mb-3">
                                         <option value="">Select Blood Type</option>
                                         <option value="A+">A+</option>
@@ -844,7 +842,7 @@
                             </div>
 
                             <div class="mb-4">
-                                <label class="input-label">46. Status *</label>
+                                <label class="input-label">46. Status <span style="color: red;">*</span></label>
                                 <select name="status" class="form-control mt-3" required>
                                     <option value="">Select Status</option>
                                     <option value="active">Active</option>
@@ -1568,6 +1566,228 @@
             background: linear-gradient(135deg, #c01060 0%, #a00d50 100%);
         }
 
+        /* ===== MINIMAL OCR STYLES ===== */
+        .ocr-minimal-panel {
+            background: linear-gradient(135deg, #fff 0%, #fffbfd 100%);
+            border: 2px solid #ffb7ce;
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 2px 8px rgba(227, 21, 117, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .ocr-minimal-panel:hover {
+            box-shadow: 0 4px 12px rgba(227, 21, 117, 0.12);
+            border-color: #e31575;
+        }
+
+        .ocr-minimal-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            color: #e31575;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .ocr-minimal-header i {
+            font-size: 18px;
+        }
+
+        .ocr-hint {
+            color: #999;
+            font-weight: 400;
+            font-size: 12px;
+            margin-left: auto;
+        }
+
+        .ocr-minimal-content {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+        }
+
+        .ocr-file-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .ocr-file-input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .ocr-file-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: white;
+            border: 2px dashed #ffb7ce;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #666;
+            font-size: 13px;
+            margin: 0;
+            height: 100%;
+        }
+
+        .ocr-file-label:hover {
+            border-color: #e31575;
+            background: #fff8fb;
+        }
+
+        .ocr-file-label.has-files {
+            border-color: #28a745;
+            background: #f0fff4;
+            color: #28a745;
+            border-style: solid;
+        }
+
+        .ocr-file-label i {
+            font-size: 16px;
+            color: #e31575;
+        }
+
+        .ocr-file-label.has-files i {
+            color: #28a745;
+        }
+
+        .ocr-scan-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #e31575 0%, #c01060 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            box-shadow: 0 2px 6px rgba(227, 21, 117, 0.3);
+        }
+
+        .ocr-scan-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(227, 21, 117, 0.4);
+        }
+
+        .ocr-scan-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #ccc;
+            box-shadow: none;
+        }
+
+        .ocr-scan-btn i {
+            font-size: 14px;
+        }
+
+        .ocr-progress-minimal {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ocr-progress-bar-minimal {
+            flex: 1;
+            height: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .ocr-progress-fill-minimal {
+            height: 100%;
+            background: linear-gradient(90deg, #e31575 0%, #ff6ba9 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 8px rgba(227, 21, 117, 0.4);
+        }
+
+        .ocr-progress-text-minimal {
+            font-size: 12px;
+            font-weight: 600;
+            color: #e31575;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .ocr-status-minimal {
+            margin-top: 10px;
+            font-size: 13px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .ocr-status-minimal:not(:empty) {
+            display: block;
+        }
+
+        .ocr-results-minimal {
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border: 1px solid #28a745;
+            border-radius: 8px;
+            color: #155724;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .ocr-results-minimal i {
+            color: #28a745;
+            font-size: 16px;
+        }
+
+        .ocr-files-list {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .ocr-files-list > div {
+            padding: 4px 0;
+            color: #666;
+        }
+
+        .ocr-files-list i {
+            color: #e31575;
+            margin-right: 6px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .ocr-minimal-content {
+                flex-direction: column;
+            }
+
+            .ocr-scan-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .ocr-hint {
+                display: none;
+            }
+        }
+
         /* Multi-step form styles */
         
         .form-header {
@@ -1649,9 +1869,7 @@
             justify-content: flex-end;
             align-items: center;
             gap: 1rem;
-            padding: 1.5rem 2rem;
-            background: #f8f9fa;
-            border-top: 1px solid #e9ecef;
+         
             margin-top: 2rem;
         }
         
@@ -1750,6 +1968,13 @@
         #finalSubmitBtn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+        }
+        
+        /* Shake animation for invalid fields */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
         }
         
         /* Responsive design */
@@ -2163,7 +2388,133 @@
             }
         }
         
+        function calculateAge(birthDate) {
+            const today = new Date();
+            const birth = new Date(birthDate);
+            let age = today.getFullYear() - birth.getFullYear();
+            const monthDiff = today.getMonth() - birth.getMonth();
+            
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            
+            return age;
+        }
+        
+        function validateDateOfBirth() {
+            const dobField = document.getElementById('date_of_birth');
+            if (!dobField || !dobField.value) return true;
+            
+            const age = calculateAge(dobField.value);
+            
+            if (age < 60) {
+                dobField.style.borderColor = '#dc3545';
+                dobField.style.borderWidth = '2px';
+                
+                // Show error message
+                let errorMsg = dobField.parentElement.querySelector('.age-error-msg');
+                if (!errorMsg) {
+                    errorMsg = document.createElement('small');
+                    errorMsg.className = 'age-error-msg text-danger d-block mt-1';
+                    errorMsg.style.fontSize = '12px';
+                    errorMsg.style.fontWeight = '600';
+                    dobField.parentElement.appendChild(errorMsg);
+                }
+                errorMsg.textContent = `Age is ${age} years old. Must be 60 years or older to register as a senior citizen.`;
+                
+                return false;
+            } else {
+                dobField.style.borderColor = '';
+                dobField.style.borderWidth = '';
+                
+                // Remove error message if exists
+                const errorMsg = dobField.parentElement.querySelector('.age-error-msg');
+                if (errorMsg) {
+                    errorMsg.remove();
+                }
+                
+                return true;
+            }
+        }
+        
+        function validateCurrentStep() {
+            // Get current step element
+            const currentStepElement = document.getElementById(`step${currentStep}`);
+            if (!currentStepElement) return true;
+            
+            // Special validation for date of birth in step 1
+            if (currentStep === 1) {
+                if (!validateDateOfBirth()) {
+                    const dobField = document.getElementById('date_of_birth');
+                    dobField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => {
+                        dobField.focus();
+                        dobField.style.animation = 'shake 0.5s';
+                        setTimeout(() => {
+                            dobField.style.animation = '';
+                        }, 500);
+                    }, 300);
+                    return false;
+                }
+            }
+            
+            // Get all required fields in the current step
+            const requiredFields = currentStepElement.querySelectorAll('[required]');
+            let isValid = true;
+            let firstInvalidField = null;
+            
+            // Check each required field
+            requiredFields.forEach(field => {
+                // Remove previous error styling
+                field.style.borderColor = '';
+                field.style.borderWidth = '';
+                
+                // Check if field is empty
+                if (field.type === 'checkbox' || field.type === 'radio') {
+                    // For checkboxes/radios, check if at least one with the same name is checked
+                    const name = field.name;
+                    const checkedFields = currentStepElement.querySelectorAll(`[name="${name}"]:checked`);
+                    if (checkedFields.length === 0 && field.required) {
+                        if (!firstInvalidField) firstInvalidField = field;
+                        isValid = false;
+                    }
+                } else if (field.value.trim() === '') {
+                    // For other inputs, check if value is empty
+                    field.style.borderColor = '#dc3545';
+                    field.style.borderWidth = '2px';
+                    if (!firstInvalidField) firstInvalidField = field;
+                    isValid = false;
+                }
+            });
+            
+            // If validation fails, scroll to first invalid field and focus it
+            if (!isValid && firstInvalidField) {
+                // Scroll to the field with some offset for better visibility
+                firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Focus the field after a short delay to ensure scroll completes
+                setTimeout(() => {
+                    firstInvalidField.focus();
+                    
+                    // Add a shake animation to the field
+                    firstInvalidField.style.animation = 'shake 0.5s';
+                    setTimeout(() => {
+                        firstInvalidField.style.animation = '';
+                    }, 500);
+                }, 300);
+            }
+            
+            return isValid;
+        }
+        
         function changeStep(direction) {
+            // If moving forward, validate current step first
+            if (direction > 0) {
+                if (!validateCurrentStep()) {
+                    return; // Don't proceed if validation fails
+                }
+            }
+            
             const newStep = currentStep + direction;
             
             if (newStep >= 1 && newStep <= totalSteps) {
@@ -2173,6 +2524,13 @@
         }
         
         function goToStep(step) {
+            // If trying to go forward, validate current step first
+            if (step > currentStep) {
+                if (!validateCurrentStep()) {
+                    return; // Don't proceed if validation fails
+                }
+            }
+            
             if (step >= 1 && step <= totalSteps) {
                 currentStep = step;
                 showStep(currentStep);
@@ -2202,167 +2560,395 @@
         }
         
         function submitForm() {
-            
-        // Google Vision OCR JavaScript
-        document.addEventListener('DOMContentLoaded', function() {
-            const ocrFileUpload = document.getElementById('ocrFileUpload');
-            const processOcrBtn = document.getElementById('processOcrBtn');
-            const ocrStatus = document.getElementById('ocrStatus');
-            const ocrProgressBar = document.getElementById('ocrProgressBar');
-            const ocrStatusText = document.getElementById('ocrStatusText');
-            const ocrResults = document.getElementById('ocrResults');
-            const ocrResultsList = document.getElementById('ocrResultsList');
-            
-            // Process OCR button click handler
-            processOcrBtn.addEventListener('click', function() {
-                const file = ocrFileUpload.files[0];
-                if (!file) {
-                    alert('Please select a file first');
-                    return;
-                }
-                
-                // Show processing status
-                ocrStatus.style.display = 'block';
-                ocrResults.style.display = 'none';
-                ocrProgressBar.style.width = '0%';
-                ocrStatusText.textContent = 'Processing...';
-                
-                // Create form data
-                const formData = new FormData();
-                formData.append('form_image', file);
-                
-                // Simulate progress
-                let progress = 0;
-                const progressInterval = setInterval(() => {
-                    progress += 5;
-                    if (progress > 90) {
-                        clearInterval(progressInterval);
-                    }
-                    ocrProgressBar.style.width = progress + '%';
-                }, 100);
-                
-                // Send to backend for processing
-                fetch('/api/vision/process-form', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    clearInterval(progressInterval);
-                    ocrProgressBar.style.width = '100%';
-                    
-                    if (data.success) {
-                        ocrStatusText.textContent = 'Processing complete!';
-                        
-                        // Display extracted data
-                        ocrResults.style.display = 'block';
-                        ocrResultsList.innerHTML = '';
-                        
-                        const formData = data.data;
-                        let resultHtml = '<div class="mb-3">';
-                        
-                        for (const [key, value] of Object.entries(formData)) {
-                            if (value) {
-                                const fieldName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                                resultHtml += `<div class="mb-2">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="text-muted">${fieldName}:</span>
-                                        <span class="fw-bold">${value}</span>
-                                    </div>
-                                </div>`;
-                            }
-                        }
-                        
-                        resultHtml += `<button type="button" class="btn btn-success btn-sm w-100 mt-2" id="applyOcrDataBtn">
-                            <i class="fas fa-check me-2"></i>Apply to Form
-                        </button>`;
-                        resultHtml += '</div>';
-                        
-                        ocrResultsList.innerHTML = resultHtml;
-                        
-                        // Add event listener for apply button
-                        document.getElementById('applyOcrDataBtn').addEventListener('click', function() {
-                            applyExtractedData(formData);
-                        });
-                    } else {
-                        ocrStatusText.textContent = 'Error: ' + data.message;
-                    }
-                })
-                .catch(error => {
-                    clearInterval(progressInterval);
-                    ocrProgressBar.style.width = '100%';
-                    ocrStatusText.textContent = 'Error: ' + error.message;
-                });
-            });
-            
-            // Function to apply extracted data to form fields
-            function applyExtractedData(data) {
-                // Map data to form fields
-                if (data.last_name) document.querySelector('input[name="last_name"]').value = data.last_name;
-                if (data.first_name) document.querySelector('input[name="first_name"]').value = data.first_name;
-                if (data.middle_name) document.querySelector('input[name="middle_name"]').value = data.middle_name;
-                
-                // Handle birth date (may need formatting)
-                if (data.birth_date) {
-                    const birthDateInput = document.querySelector('input[name="birth_date"]');
-                    if (birthDateInput) {
-                        // Try to convert to YYYY-MM-DD format if needed
-                        let formattedDate = data.birth_date;
-                        
-                        // Check if it's in MM/DD/YYYY format
-                        const dateMatch = data.birth_date.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-                        if (dateMatch) {
-                            formattedDate = `${dateMatch[3]}-${dateMatch[1].padStart(2, '0')}-${dateMatch[2].padStart(2, '0')}`;
-                        }
-                        
-                        birthDateInput.value = formattedDate;
-                    }
-                }
-                
-                // Handle address fields
-                if (data.address) {
-                    const addressInput = document.querySelector('input[name="address"], textarea[name="address"]');
-                    if (addressInput) addressInput.value = data.address;
-                }
-                
-                // Handle senior citizen ID
-                if (data.senior_citizen_id) {
-                    const idInput = document.querySelector('input[name="senior_citizen_id"]');
-                    if (idInput) idInput.value = data.senior_citizen_id;
-                }
-                
-                // Handle contact number
-                if (data.contact_number) {
-                    const contactInput = document.querySelector('input[name="contact_number"]');
-                    if (contactInput) contactInput.value = data.contact_number;
-                }
-                
-                // Handle marital status
-                if (data.marital_status) {
-                    const maritalStatusSelect = document.querySelector('select[name="marital_status"]');
-                    if (maritalStatusSelect) {
-                        // Find the option that matches (case-insensitive)
-                        const options = Array.from(maritalStatusSelect.options);
-                        const matchingOption = options.find(option => 
-                            option.text.toLowerCase() === data.marital_status.toLowerCase()
-                        );
-                        
-                        if (matchingOption) {
-                            maritalStatusSelect.value = matchingOption.value;
-                        }
-                    }
-                }
-                
-                // Show success message
-                alert('Form fields have been filled with the extracted data!');
-            }
-        });
             // This function is now replaced by showCertificationModal
             showCertificationModal();
         }
+        
+        // ===== OCR JAVASCRIPT (FROM MASTERPROFILE) =====
+        
+        // Display selected files when files are chosen
+        document.getElementById('ocrFileUpload').addEventListener('change', function() {
+            const filesContainer = document.getElementById('selectedFilesContainer');
+            const filesList = document.getElementById('selectedFilesList');
+            const fileLabel = document.querySelector('.ocr-file-label');
+            const fileText = document.getElementById('ocrFileText');
+            const scanBtn = document.getElementById('processOcrBtn');
+            
+            // Clear previous list
+            filesList.innerHTML = '';
+            
+            if (this.files.length > 0) {
+                // Update label appearance
+                fileLabel.classList.add('has-files');
+                
+                // Update text based on number of files
+                if (this.files.length === 1) {
+                    fileText.textContent = this.files[0].name.length > 30 
+                        ? this.files[0].name.substring(0, 30) + '...' 
+                        : this.files[0].name;
+                } else {
+                    fileText.textContent = `${this.files.length} files selected`;
+                }
+                
+                // Enable scan button
+                scanBtn.disabled = false;
+                
+                // Show files list
+                filesContainer.classList.remove('d-none');
+                Array.from(this.files).forEach((file, index) => {
+                    const fileItem = document.createElement('div');
+                    fileItem.innerHTML = `<i class="fas fa-file"></i> ${file.name} <small class="text-muted">(${(file.size / 1024).toFixed(1)} KB)</small>`;
+                    filesList.appendChild(fileItem);
+                });
+            } else {
+                // Reset to default
+                fileLabel.classList.remove('has-files');
+                fileText.textContent = 'Choose files or drag here';
+                scanBtn.disabled = true;
+                filesContainer.classList.add('d-none');
+            }
+        });
+        
+        // Process multiple documents sequentially
+        async function processOcrDocuments() {
+            console.log("processOcrDocuments function called");
+            const ocrFileUpload = document.getElementById('ocrFileUpload');
+            const ocrStatus = document.getElementById('ocrStatus');
+            const progressContainer = document.getElementById('ocrProgressContainer');
+            const progressBar = document.getElementById('ocrProgressBar');
+            
+            if (!ocrFileUpload || !ocrFileUpload.files || !ocrFileUpload.files.length) {
+                ocrStatus.innerHTML = '<span class="text-danger">Please select at least one document to scan</span>';
+                return;
+            }
+            
+            const files = Array.from(ocrFileUpload.files);
+            const totalFiles = files.length;
+            let processedFiles = 0;
+            let successfulFiles = 0;
+            
+            // Show progress bar
+            progressContainer.classList.remove('d-none');
+            progressBar.style.width = '0%';
+            
+            // Update initial status message
+            ocrStatus.innerHTML = `<span class="text-info"><i class="fas fa-spinner fa-spin me-1"></i> Processing ${totalFiles} document(s), please wait...</span>`;
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            
+            // Process each file sequentially
+            let combinedData = null;
+            
+            for (const file of files) {
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    // Update status for current file
+                    ocrStatus.innerHTML = `<span class="text-info"><i class="fas fa-spinner fa-spin me-1"></i> Processing file ${processedFiles + 1}/${totalFiles}: ${file.name}</span>`;
+                    
+                    console.log(`Processing file ${processedFiles + 1}/${totalFiles}: ${file.name}`);
+                    
+                    // Send to API endpoint
+                    const response = await fetch('/api/ocr/process', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken || ''
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Network error (${response.status})`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        successfulFiles++;
+                        
+                        // Merge data from this file with previous data
+                        if (data.data) {
+                            if (!combinedData) {
+                                combinedData = data;
+                            } else {
+                                // Merge new data with existing data, prioritizing non-empty values
+                                Object.keys(data.data).forEach(key => {
+                                    if (data.data[key] && (!combinedData.data[key] || combinedData.data[key] === '')) {
+                                        combinedData.data[key] = data.data[key];
+                                    }
+                                });
+                            }
+                        }
+                    } else {
+                        console.error(`OCR Error for ${file.name}:`, data.message || "Unknown error");
+                    }
+                } catch (error) {
+                    console.error(`Error processing ${file.name}:`, error);
+                }
+                
+                // Update progress
+                processedFiles++;
+                const progress = Math.round((processedFiles / totalFiles) * 100);
+                progressBar.style.width = `${progress}%`;
+                progressBar.setAttribute('aria-valuenow', progress);
+                
+                // Update progress text
+                const progressText = document.getElementById('ocrProgressText');
+                if (progressText) {
+                    progressText.textContent = `${progress}% (${processedFiles}/${totalFiles})`;
+                }
+            }
+            
+            // All files processed - update final status
+            if (successfulFiles > 0) {
+                ocrStatus.innerHTML = `<span class="text-success"><i class="fas fa-check-circle me-1"></i> Processed ${successfulFiles} of ${totalFiles} documents successfully!</span>`;
+                
+                // Show results container
+                const resultsContainer = document.getElementById('ocrResultsContainer');
+                const resultsSummary = document.getElementById('ocrResultsSummary');
+                if (resultsContainer && resultsSummary) {
+                    resultsContainer.classList.remove('d-none');
+                    resultsSummary.textContent = `Successfully processed ${successfulFiles} of ${totalFiles} documents. Form fields have been populated with the extracted data.`;
+                }
+                
+                // Fill form fields with combined extracted data
+                if (combinedData && combinedData.data) {
+                    fillFormFields(combinedData);
+                }
+            } else {
+                ocrStatus.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle me-1"></i> Failed to process any documents successfully.</span>`;
+            }
+        }
+        
+        // Global function for OCR scanning
+        function handleOcrScan() {
+            console.log("OCR Scan button clicked via onclick");
+            processOcrDocuments();
+        }
+        
+        // Direct event handler for scan button (backup)
+        document.addEventListener('DOMContentLoaded', function() {
+            const processBtn = document.getElementById('processOcrBtn');
+            if (processBtn) {
+                processBtn.addEventListener('click', function() {
+                    console.log("Scan button clicked directly");
+                    processOcrDocuments();
+                });
+            }
+        });
+        
+        // Function to fill form fields with OCR data using multiple fallback patterns
+        function fillFormFields(data) {
+            console.log("Filling form fields with OCR data:", data);
+            
+            // Extract data object
+            const ocrData = data.data || {};
+            
+            // Define pattern arrays for all fields
+            const firstNamePatterns = ['first_name', 'firstname', 'first name', 'name_first', 'name first', 'given_name', 'givenname', 'given name', 'maiden_name', 'maiden name'];
+            const lastNamePatterns = ['last_name', 'lastname', 'last name', 'name_last', 'name last', 'surname', 'family_name', 'familyname', 'family name'];
+            const middleNamePatterns = ['middle_name', 'middlename', 'middle name', 'name_middle', 'name middle', 'middle_initial', 'middleinitial', 'middle initial'];
+            const oscaIdPatterns = ['osca_id', 'oscaid', 'osca id', 'osca_id_number', 'osca_id_no', 'osca_number', 'oscanumber', 'osca number'];
+            const gsisSssPatterns = ['gsis_sss', 'gsissss', 'gsis sss', 'gsis_sss_number', 'gsis_sss_no', 'sss_number', 'sssnumber', 'sss number', 'gsis_number', 'gsisnumber'];
+            const tinPatterns = ['tin', 'tax_identification_number', 'tax identification number', 'tin_no', 'tin no', 'tax_id', 'tax id'];
+            const philhealthPatterns = ['philhealth', 'philhealth_number', 'philhealth number', 'philhealth_no', 'philhealth no', 'philhealth_id'];
+            const scAssociationPatterns = ['sc_association', 'scassociation', 'sc association', 'senior_citizen_association_id', 'senior citizen association id'];
+            const otherGovtIdPatterns = ['other_govt_id', 'othergovtid', 'other govt id', 'other_government_id', 'other government id', 'other_id'];
+            const dateOfBirthPatterns = ['date_of_birth', 'dateofbirth', 'date of birth', 'birth_date', 'birthdate', 'birth date', 'dob'];
+            const birthPlacePatterns = ['birth_place', 'birthplace', 'birth place', 'place_of_birth', 'placeofbirth', 'place of birth'];
+            const residencePatterns = ['residence', 'house_no', 'house no', 'zone', 'purok', 'sitio'];
+            const streetPatterns = ['street', 'st', 'street_name', 'streetname', 'street name'];
+            const ethnicOriginPatterns = ['ethnic_origin', 'ethnicorigin', 'ethnic origin', 'ethnicity', 'ethnic_group', 'ethnic group', 'tribe'];
+            const languagePatterns = ['language', 'language_spoken', 'languagespoken', 'language spoken', 'dialect', 'mother_tongue', 'mothertongue', 'mother tongue'];
+            const contactNumberPatterns = ['contact_number', 'contactnumber', 'contact number', 'phone', 'mobile', 'cellphone', 'cell phone', 'telephone'];
+            const emailPatterns = ['email', 'email_address', 'emailaddress', 'email address', 'e-mail', 'e mail'];
+            const maritalStatusPatterns = ['marital_status', 'maritalstatus', 'marital status', 'civil_status', 'civilstatus', 'civil status'];
+            const sexPatterns = ['sex', 'gender'];
+            
+            // Function to find value using multiple patterns
+            function findValueByPatterns(data, patterns) {
+                // First try exact matches in the data object
+                for (const pattern of patterns) {
+                    if (data[pattern] !== undefined && data[pattern] !== null && data[pattern] !== '') {
+                        console.log(`Found ${pattern} with value: ${data[pattern]}`);
+                        return data[pattern];
+                    }
+                }
+                
+                // If no exact match, try case-insensitive search in all properties
+                for (const key in data) {
+                    const keyLower = key.toLowerCase();
+                    for (const pattern of patterns) {
+                        if (keyLower.includes(pattern.toLowerCase())) {
+                            console.log(`Found similar key ${key} matching pattern ${pattern} with value: ${data[key]}`);
+                            return data[key];
+                        }
+                    }
+                }
+                
+                // If still not found, check if there's a nested 'data' object
+                if (data.data && typeof data.data === 'object') {
+                    return findValueByPatterns(data.data, patterns);
+                }
+                
+                return null;
+            }
+            
+            // Fill First Name
+            const firstName = findValueByPatterns(ocrData, firstNamePatterns);
+            if (firstName) {
+                const field = document.querySelector('input[name="first_name"]');
+                if (field) field.value = firstName;
+            }
+            
+            // Fill Last Name
+            const lastName = findValueByPatterns(ocrData, lastNamePatterns);
+            if (lastName) {
+                const field = document.querySelector('input[name="last_name"]');
+                if (field) field.value = lastName;
+            }
+            
+            // Fill Middle Name
+            const middleName = findValueByPatterns(ocrData, middleNamePatterns);
+            if (middleName) {
+                const field = document.querySelector('input[name="middle_name"]');
+                if (field) field.value = middleName;
+            }
+            
+            // Fill OSCA ID
+            const oscaId = findValueByPatterns(ocrData, oscaIdPatterns);
+            if (oscaId) {
+                const field = document.querySelector('input[name="osca_id"]');
+                if (field) field.value = oscaId;
+            }
+            
+            // Fill GSIS/SSS
+            const gsisSss = findValueByPatterns(ocrData, gsisSssPatterns);
+            if (gsisSss) {
+                const field = document.querySelector('input[name="gsis_sss"]');
+                if (field) field.value = gsisSss;
+            }
+            
+            // Fill TIN
+            const tin = findValueByPatterns(ocrData, tinPatterns);
+            if (tin) {
+                const field = document.querySelector('input[name="tin"]');
+                if (field) field.value = tin;
+            }
+            
+            // Fill PhilHealth
+            const philhealth = findValueByPatterns(ocrData, philhealthPatterns);
+            if (philhealth) {
+                const field = document.querySelector('input[name="philhealth"]');
+                if (field) field.value = philhealth;
+            }
+            
+            // Fill SC Association
+            const scAssociation = findValueByPatterns(ocrData, scAssociationPatterns);
+            if (scAssociation) {
+                const field = document.querySelector('input[name="sc_association"]');
+                if (field) field.value = scAssociation;
+            }
+            
+            // Fill Other Govt ID
+            const otherGovtId = findValueByPatterns(ocrData, otherGovtIdPatterns);
+            if (otherGovtId) {
+                const field = document.querySelector('input[name="other_govt_id"]');
+                if (field) field.value = otherGovtId;
+            }
+            
+            // Fill Date of Birth
+            const dateOfBirth = findValueByPatterns(ocrData, dateOfBirthPatterns);
+            if (dateOfBirth) {
+                const field = document.querySelector('input[name="date_of_birth"]');
+                if (field) field.value = dateOfBirth;
+            }
+            
+            // Fill Birth Place
+            const birthPlace = findValueByPatterns(ocrData, birthPlacePatterns);
+            if (birthPlace) {
+                const field = document.querySelector('input[name="birth_place"]');
+                if (field) field.value = birthPlace;
+            }
+            
+            // Fill Residence
+            const residence = findValueByPatterns(ocrData, residencePatterns);
+            if (residence) {
+                const field = document.querySelector('input[name="residence"]');
+                if (field) field.value = residence;
+            }
+            
+            // Fill Street
+            const street = findValueByPatterns(ocrData, streetPatterns);
+            if (street) {
+                const field = document.querySelector('input[name="street"]');
+                if (field) field.value = street;
+            }
+            
+            // Fill Ethnic Origin
+            const ethnicOrigin = findValueByPatterns(ocrData, ethnicOriginPatterns);
+            if (ethnicOrigin) {
+                const field = document.querySelector('input[name="ethnic_origin"]');
+                if (field) field.value = ethnicOrigin;
+            }
+            
+            // Fill Language
+            const language = findValueByPatterns(ocrData, languagePatterns);
+            if (language) {
+                const field = document.querySelector('input[name="language"]');
+                if (field) field.value = language;
+            }
+            
+            // Fill Contact Number
+            const contactNumber = findValueByPatterns(ocrData, contactNumberPatterns);
+            if (contactNumber) {
+                const field = document.querySelector('input[name="contact_number"]');
+                if (field) field.value = contactNumber;
+            }
+            
+            // Fill Email
+            const email = findValueByPatterns(ocrData, emailPatterns);
+            if (email) {
+                const field = document.querySelector('input[name="email"]');
+                if (field) field.value = email;
+            }
+            
+            // Fill Marital Status
+            const maritalStatus = findValueByPatterns(ocrData, maritalStatusPatterns);
+            if (maritalStatus) {
+                const field = document.querySelector('select[name="marital_status"]');
+                if (field) {
+                    // Try to find matching option
+                    const options = Array.from(field.options);
+                    const match = options.find(opt => opt.value.toLowerCase() === maritalStatus.toLowerCase() || opt.text.toLowerCase() === maritalStatus.toLowerCase());
+                    if (match) field.value = match.value;
+                }
+            }
+            
+            // Fill Sex/Gender
+            const sex = findValueByPatterns(ocrData, sexPatterns);
+            if (sex) {
+                const field = document.querySelector('select[name="sex"]');
+                if (field) {
+                    const sexValue = sex.toLowerCase();
+                    if (sexValue.includes('male') && !sexValue.includes('female')) {
+                        field.value = 'Male';
+                    } else if (sexValue.includes('female')) {
+                        field.value = 'Female';
+                    }
+                }
+            }
+            
+            // Show success message
+            alert('Form fields have been filled with the extracted OCR data!');
+            
+            // Scroll to top to see filled fields
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        // ===== END OF OCR JAVASCRIPT =====
         
         // Initialize form on page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -2383,6 +2969,52 @@
             if (certificationCheckbox && finalSubmitBtn) {
                 certificationCheckbox.addEventListener('change', function() {
                     finalSubmitBtn.disabled = !this.checked;
+                });
+            }
+            
+            // Add input event listeners to remove red border when user starts typing
+            document.querySelectorAll('input[required], select[required], textarea[required]').forEach(field => {
+                field.addEventListener('input', function() {
+                    if (this.value.trim() !== '') {
+                        this.style.borderColor = '';
+                        this.style.borderWidth = '';
+                    }
+                });
+                
+                // For select elements, also listen to change event
+                if (field.tagName === 'SELECT') {
+                    field.addEventListener('change', function() {
+                        if (this.value.trim() !== '') {
+                            this.style.borderColor = '';
+                            this.style.borderWidth = '';
+                        }
+                    });
+                }
+            });
+            
+            // Add event listener for date of birth validation and set max date
+            const dobField = document.getElementById('date_of_birth');
+            if (dobField) {
+                // Set max date to 60 years ago from today
+                const today = new Date();
+                const maxDate = new Date(today.getFullYear() - 60, today.getMonth(), today.getDate());
+                const maxDateString = maxDate.toISOString().split('T')[0];
+                dobField.setAttribute('max', maxDateString);
+                
+                // Set a reasonable min date (e.g., 120 years ago)
+                const minDate = new Date(today.getFullYear() - 120, today.getMonth(), today.getDate());
+                const minDateString = minDate.toISOString().split('T')[0];
+                dobField.setAttribute('min', minDateString);
+                
+                dobField.addEventListener('change', function() {
+                    validateDateOfBirth();
+                });
+                
+                // Also validate on input
+                dobField.addEventListener('input', function() {
+                    if (this.value) {
+                        validateDateOfBirth();
+                    }
                 });
             }
         });
