@@ -232,7 +232,7 @@
                             <input type="email" name="email" class="form-control form-control-sm" placeholder="Email Address">
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label small">9. Religion *</label>
+                            <label class="form-label small">9. Religion</label>
                             <select name="religion" id="religion" class="form-select form-select-sm" required>
                                 <option value="">Select Religion</option>
                                 <option value="Roman Catholic">Roman Catholic</option>
@@ -254,7 +254,7 @@
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label small">10. Ethnic Origin *</label>
+                            <label class="form-label small">10. Ethnic Origin</label>
                             <input type="text" name="ethnic_origin" id="ethnic_origin" class="form-control form-control-sm" placeholder="Ethnic Origin" required>
                             <div class="invalid-feedback" id="ethnic_origin-error" style="display: none;">
                                 Please enter ethnic origin.
@@ -312,7 +312,7 @@
                             <input type="text" name="employment" class="form-control form-control-sm" placeholder="Specify">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small">20. Has Pension<span style="color: red;">*</span></label>
+                            <label class="form-label small">20. Pension<span style="color: red;">*</span></label>
                             <select name="has_pension" class="form-select form-select-sm" required>
                                 <option value="">Select</option>
                                 <option value="1">With Pension</option>
@@ -445,8 +445,8 @@
                             <table class="table table-sm table-bordered">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Name of Dependent</th>
-                                        <th>Occupation of Dependent</th>
+                                        <th>Complete Name</th>
+                                        <th>Occupation</th>
                                         <th>Income</th>
                                         <th>Age</th>
                                         <th>Is Working?</th>

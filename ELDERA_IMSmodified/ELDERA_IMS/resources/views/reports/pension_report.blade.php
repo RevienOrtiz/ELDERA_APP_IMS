@@ -2,7 +2,7 @@
 <div class="report-container">
     <div class="report-header">
         <div class="logo-container">
-            <img src="{{ asset('images/OSCA.png') }}" alt="Logo" class="report-logo">
+            <img src="{{ asset('images/SOCIAL_PENSION.png') }}" alt="Logo" class="report-logo">
         </div>
         <div class="header-text">
             <h1>Senior Citizens with Pension</h1>

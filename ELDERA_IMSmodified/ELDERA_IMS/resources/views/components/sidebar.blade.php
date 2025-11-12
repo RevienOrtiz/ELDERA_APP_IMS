@@ -256,7 +256,7 @@
         <a href="{{ route('events') }}"><i class="fas fa-calendar-alt"></i> Events</a>
       </li>
       <li class="{{ request()->routeIs('admin.password-reset-requests.*') ? 'active' : '' }}">
-        <a href="{{ route('admin.password-reset-requests.index') }}"><i class="fas fa-key"></i> Password Reset Requests</a>
+        <a href="{{ route('admin.password-reset-requests.index') }}"><i class="fas fa-key"></i> Recovery Requests</a>
       </li>
     </ul>
   </div>

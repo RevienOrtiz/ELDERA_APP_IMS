@@ -1,5 +1,5 @@
 <!-- Social Pension Table -->
-<div class="table-container" id="pension-table" style="display: none; max-height: 600px; overflow-y: auto;">
+<div class="table-container" id="pension-table" style="display: none;">
     <table class="records-table">
         <thead style="position: sticky; top: 0; z-index: 1; background-color: #f8f9fa;">
             <tr>
@@ -31,13 +31,13 @@
                 </td>
                 <td>
                     <div class="action-buttons">
-                        <a href="{{ route('seniors.pension.view', $application->id) }}" class="btn btn-info" title="View">
+                        <a href="{{ route('seniors.pension.view', $application->id) }}" class="btn btn-sm btn-primary" title="View">
                             <i class="fas fa-eye"></i> View
                         </a>
-                        <a href="{{ route('seniors.pension.edit', $application->id) }}" class="btn btn-warning" title="Edit">
+                        <a href="{{ route('seniors.pension.edit', $application->id) }}" class="btn btn-sm btn-warning" title="Edit">
                             <i class="fas fa-edit"></i> Edit
                         </a>
-                        <button type="button" class="btn btn-danger" title="Delete" onclick="showDeleteModal('{{ $application->id }}', '{{ $application->senior ? $application->senior->first_name . ' ' . $application->senior->last_name : 'N/A' }}', 'pension')">
+                        <button type="button" class="btn btn-sm btn-danger" title="Delete" onclick="showDeleteModal('{{ $application->id }}', '{{ $application->senior ? $application->senior->first_name . ' ' . $application->senior->last_name : 'N/A' }}', 'pension')">
                             <i class="fas fa-trash"></i> Delete
                         </button>
                     </div>

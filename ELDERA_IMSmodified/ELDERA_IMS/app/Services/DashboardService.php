@@ -99,8 +99,9 @@ class DashboardService
 
     public function getEventStatisticsByType(): array
     {
-        // Get event statistics by type
-        $stats = Event::selectRaw('
+        // Get upcoming event statistics by type to match Events list
+        $stats = Event::upcoming()
+            ->selectRaw('
                 event_type,
                 COUNT(*) as count
             ')

@@ -47,6 +47,30 @@ class SeniorController extends Controller
     }
     
     /**
+     * Generate a printable report of seniors applying for ONCBP (Benefits)
+     */
+    public function generateOncbpReport(Request $request)
+    {
+        $benefitsApplications = Application::select(['id', 'senior_id', 'status', 'created_at'])
+            ->with(['senior:id,osca_id,first_name,last_name,middle_name,barangay,date_of_birth,sex',
+                    'benefitsApplication:application_id,milestone_age'])
+            ->where('application_type', 'benefits')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $html = ViewFacade::make('reports.oncbp_report', [
+            'applications' => $benefitsApplications,
+            'date' => now()->format('F d, Y'),
+            'total' => $benefitsApplications->count()
+        ])->render();
+
+        return response()->view('reports.oncbp_report_wrapper', [
+            'content' => $html,
+            'title' => 'ONCBP Applicants Report'
+        ]);
+    }
+    
+    /**
      * Clear relevant caches when data changes
      */
     private function clearRelevantCaches(): void
