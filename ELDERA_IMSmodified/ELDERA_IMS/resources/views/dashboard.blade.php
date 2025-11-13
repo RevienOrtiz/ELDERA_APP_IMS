@@ -264,7 +264,7 @@
         .legend-male { background: #208FF7; }
         .legend-female { background: #F72020; }
         .legend-pension { background: #e31575 }
-        .legend-nopension { background: #e0e0e0; }
+        .legend-nopension { background: #ffb7ce; }
 
         .event-general { background: #19e36c; }
         .event-pension { background: #3c8be3; }
@@ -773,16 +773,16 @@
                
             </div>
             
-            <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-start;">
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-start;" id="charts-events-row">
                 {{-- Left Column: Pie Charts and Bar Chart --}}
-                <div style="display: flex; flex-direction: column; gap: 15px; flex: 1; min-width: 520px;">
+                <div style="display: flex; flex-direction: column; gap: 15px; flex: 1; min-width: 520px;" id="charts-column">
                     {{-- Pie Charts Row --}}
-                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;" id="pie-row">
                         {{-- With Pension Chart --}}
-                        <div class="card" style="flex: 1; min-width: 250px; max-width: 300px; height: 300px; display: flex; flex-direction: column;">
+                        <div class="card" style="flex: 1; min-width: 250px; height: 300px; display: flex; flex-direction: column;">
                             <div class="card-header">With Pension</div>
                             <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1;">
-                                <div class="legend" style="flex-wrap: nowrap; margin-bottom: 8px; padding-top: 8px; font-size: 7px; gap: 6px;">
+                                <div class="legend" style="flex-wrap: nowrap; margin-bottom: 8px; padding-top: 8px; font-size: 9px; gap: 10px;">
                                     <div class="legend-item" style="gap: 2px;"><span class="legend-color legend-pension" style="width: 7px; height: 7px;"></span>WITH PENSION</div>
                                     <div class="legend-item" style="gap: 2px;"><span class="legend-color legend-nopension" style="width: 7px; height: 7px;"></span>WITHOUT PENSION</div>
                                 </div>
@@ -793,10 +793,10 @@
                         </div>
                         
                         {{-- Total Events Chart --}}
-                        <div class="card" style="flex: 1; min-width: 250px; max-width: 300px; height: 300px; display: flex; flex-direction: column;">
+                        <div class="card" style="flex: 1; min-width: 250px; height: 300px; display: flex; flex-direction: column;">
                             <div class="card-header">TOTAL EVENTS</div>
                             <div class="card-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1;">
-                                <div class="legend" style="flex-wrap: nowrap; margin-bottom: 8px; padding-top: 8px; font-size: 7px; gap: 6px;">
+                                <div class="legend" style="flex-wrap: nowrap; margin-bottom: 8px; padding-top: 8px; font-size: 9px; gap: 10px;">
                                     <div class="legend-item" style="gap: 2px;"><span class="legend-color event-general" style="width: 7px; height: 7px;"></span>GENERAL</div>
                                     <div class="legend-item" style="gap: 2px;"><span class="legend-color event-pension" style="width: 7px; height: 7px;"></span>PENSION</div>
                                     <div class="legend-item" style="gap: 2px;"><span class="legend-color event-health" style="width: 7px; height: 7px;"></span>HEALTH</div>
@@ -816,32 +816,34 @@
                             <div style="width:100%; height:200px; display:flex; align-items:center; justify-content:center;">
                                 <canvas id="ageBarChart" width="400" height="180"></canvas>
                             </div>
-                            <div class="legend">
-                                <div class="legend-item"><span class="legend-color legend-male"></span>MALE</div>
-                                <div class="legend-item"><span class="legend-color legend-female"></span>FEMALE</div>
+                            <div class="legend" style="flex-wrap: nowrap; margin-bottom: 8px; padding-top: 8px; font-size: 10px; gap: 10px;">
+                                <div class="legend-item" style="gap: 2px;"><span class="legend-color legend-male" style="width: 7px; height: 7px;"></span>MALE</div>
+                                <div class="legend-item" style="gap: 2px;"><span class="legend-color legend-female" style="width: 7px; height: 7px;"></span>FEMALE</div>
                             </div>
                         </div>
                     </div>
                 </div>
                 
                 {{-- Right Column: Events Card --}}
-                <div class="card" style="flex: 1.5; min-width: 280px; height: 575px; display: flex; flex-direction: column;">
+                <div class="card" style="flex: 1.5; min-width: 280px; display: flex; flex-direction: column;" id="events-card">
                     <div class="card-header">EVENTS</div>
                     <div class="events-table-container" style="flex: 1; overflow: hidden; display: flex; flex-direction: column;">
-                        <div class="events-table-header">
+                    <div class="events-table-header">
                             <table class="events-table" style="margin-bottom: 0; table-layout: fixed;">
                                 <colgroup>
-                                    <col style="width: 45%;">
+                                    <col style="width: 6%;">
+                                    <col style="width: 39%;">
                                     <col style="width: 20%;">
                                     <col style="width: 20%;">
                                     <col style="width: 15%;">
                                 </colgroup>
                                 <thead>
                                     <tr>
+                                        <th style="text-align: center; padding: 12px 8px;">No.</th>
                                         <th style="text-align: left; padding: 12px 12px;">EVENTS</th>
                                         <th style="text-align: center; padding: 12px 8px;">DATE</th>
                                         <th style="text-align: center; padding: 12px 8px;">TIME</th>
-                                        <th style="text-align: left; padding: 12px 12px;">PLACE</th>
+                                        <th style="text-align: left; padding: 12px 12px;">LOCATION</th>
                                     </tr>
                                 </thead>
                             </table>
@@ -849,7 +851,8 @@
                         <div class="events-table-body" style="flex: 1; overflow-y: auto;">
                             <table class="events-table" style="table-layout: fixed;">
                                 <colgroup>
-                                    <col style="width: 45%;">
+                                    <col style="width: 6%;">
+                                    <col style="width: 39%;">
                                     <col style="width: 20%;">
                                     <col style="width: 20%;">
                                     <col style="width: 15%;">
@@ -866,6 +869,7 @@
                                         $eventColor = $eventColors[$event->event_type] ?? '#277da1';
                                     @endphp
                                     <tr style="transition: background-color 0.2s ease;">
+                                        <td style="padding: 12px 8px; text-align: center; vertical-align: middle; color: #555; font-size: 13px; font-weight: 600;">{{ $loop->iteration }}</td>
                                         <td style="padding: 12px 12px; vertical-align: middle;">
                                             <a href="{{ route('events.show', $event->id) }}" style="color: {{ $eventColor }}; text-decoration: none; font-weight: 600; font-size: 14px; transition: color 0.2s ease; display: inline-block;">{{ $event->title }}</a>
                                         </td>
@@ -895,6 +899,28 @@
         </div>
         </div>
     </div>
+    <style>
+      /* Ensure equal spacing between cards in the charts/events section */
+      #charts-events-row .card { margin-bottom: 0 !important; }
+      #charts-events-row, #charts-column, #pie-row { gap: 15px; }
+    </style>
+    <script>
+      (function() {
+        function syncEventsHeight() {
+          var chartsCol = document.getElementById('charts-column');
+          var eventsCard = document.getElementById('events-card');
+          if (!chartsCol || !eventsCard) return;
+          // Fine-tune to align bottom edges visually (border/padding differences)
+          var chartsHeight = chartsCol.getBoundingClientRect().height;
+          var adjust = 8; // small offset to prevent events card from exceeding
+          eventsCard.style.height = Math.max(0, chartsHeight - adjust) + 'px';
+        }
+        window.addEventListener('load', syncEventsHeight);
+        window.addEventListener('resize', syncEventsHeight);
+        // In case content (like charts) renders slightly later
+        setTimeout(syncEventsHeight, 300);
+      })();
+    </script>
     {{-- <footer class="main-footer">
         <img src="{{ asset('images/Bagong_Pilipinas.png') }}" alt="Bagong Pilipinas" class="footer-logo">
     </footer> --}}
@@ -920,7 +946,7 @@ document.addEventListener('DOMContentLoaded', function() {
       data: {
         datasets: [{
           data: pensionData,
-          backgroundColor: ['#e31575', '#e0e0e0'],
+          backgroundColor: ['#e31575', '#ffb7ce'],
           borderWidth: 0
         }]
       },

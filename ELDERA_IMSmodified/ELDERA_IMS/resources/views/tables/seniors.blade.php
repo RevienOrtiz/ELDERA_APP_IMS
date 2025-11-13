@@ -257,12 +257,15 @@
 
                 <!-- Action Section -->
                 <div class="action-section">
+                    <a href="{{ route('seniors.pension.report') }}" id="pension-report-btn" class="report-btn" target="_blank" style="display: none;">
+                        <i class="fas fa-file-pdf"></i> Generate Pension Report
+                    </a>
+                    <a href="{{ route('seniors.oncbp.report') }}" id="oncbp-report-btn" class="report-btn" target="_blank" style="display: none;">
+                        <i class="fas fa-file-pdf"></i> Generate ONCBP Report
+                    </a>
                     <button class="add-btn" id="add-btn" onclick="redirectToForm()">
                         <i class="fas fa-plus"></i> <span id="add-btn-text">Add New Senior</span>
                     </button>
-                    <a href="{{ route('seniors.pension.report') }}" class="report-btn" target="_blank">
-                        <i class="fas fa-file-pdf"></i> Generate Pension Report
-                    </a>
                 </div>
             </div>
                     
@@ -273,7 +276,7 @@
                     align-items: center;
                 }
                 .report-btn {
-                    background-color: #4CAF50;
+                    background-color: #4CAF50; /* Green */
                     color: white;
                     border: none;
                     padding: 10px 15px;
@@ -288,7 +291,7 @@
                     margin-right: 5px;
                 }
                 .report-btn:hover {
-                    background-color: #45a049;
+                    background-color: #45a049; /* Darker green on hover */
                     color: white;
                 }
             </style>
@@ -1378,6 +1381,7 @@
                     // Update dynamic filters for the new tab
                     updateDynamicFilters();
                     applyAllFilters();
+                    updateReportButtonVisibility();
                 }
                 
                 function showSubTab(subTabName) {
@@ -1407,11 +1411,23 @@
                     // Update dynamic filters for the new sub-tab
                     updateDynamicFilters();
                     applyAllFilters();
+                    updateReportButtonVisibility();
                 }
                 
                 function updateAddButton(text, url) {
                     document.getElementById('add-btn-text').textContent = text;
                     document.getElementById('add-btn').setAttribute('data-url', url);
+                }
+
+                function updateReportButtonVisibility() {
+                    const pensionBtn = document.getElementById('pension-report-btn');
+                    const oncbpBtn = document.getElementById('oncbp-report-btn');
+                    if (pensionBtn) {
+                        pensionBtn.style.display = (currentTab === 'benefits-applicants' && currentSubTab === 'pension') ? 'inline-flex' : 'none';
+                    }
+                    if (oncbpBtn) {
+                        oncbpBtn.style.display = (currentTab === 'benefits-applicants' && currentSubTab === 'existing-senior') ? 'inline-flex' : 'none';
+                    }
                 }
                 
                 function updateDynamicFilters() {

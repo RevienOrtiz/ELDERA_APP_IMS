@@ -63,7 +63,7 @@
             margin-bottom: 20px;
             padding: 15px;
             background-color: #f9f9f9;
-            border-left: 4px solid #4CAF50;
+            border-left: 4px solid #CC0052;
         }
         
         .report-table-container {
@@ -83,7 +83,7 @@
         }
         
         .report-table th {
-            background-color: #4CAF50;
+            background-color: #CC0052;
             color: white;
             font-weight: bold;
         }
@@ -106,19 +106,12 @@
         }
         
         @media print {
-            body {
-                background-color: white;
-            }
-            
-            .report-container {
-                box-shadow: none;
-                margin: 0;
-                padding: 20px;
-            }
-            
-            .print-controls {
-                display: none;
-            }
+            html, body { width: 210mm; min-height: 297mm; background-color: white; }
+            .report-container { box-shadow: none; margin: 0; padding: 20px; max-width: none; width: 100%; }
+            .print-controls { display: none; }
+            thead { display: table-header-group; }
+            /* Allow table to break across pages, prevent row splitting */
+            .report-table tr, .report-table td, .report-table th { page-break-inside: avoid; }
         }
         
         .print-controls {
@@ -127,7 +120,7 @@
         }
         
         .print-btn {
-            background-color: #4CAF50;
+            background-color: #CC0052;
             color: white;
             border: none;
             padding: 10px 20px;
@@ -137,7 +130,12 @@
         }
         
         .print-btn:hover {
-            background-color: #45a049;
+            background-color: #a80047;
+        }
+        
+        @page {
+            size: A4;
+            margin: 20mm;
         }
     </style>
 </head>

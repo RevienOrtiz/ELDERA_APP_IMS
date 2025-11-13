@@ -91,6 +91,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/Seniors', [SeniorController::class, 'index'])->name('seniors');
     Route::get('/Seniors/pension-report', [SeniorController::class, 'generatePensionReport'])->name('seniors.pension.report');
+    // ONCBP/Benefits Applicants Report
+    Route::get('/Seniors/oncbp-report', [SeniorController::class, 'generateOncbpReport'])->name('seniors.oncbp.report');
     
     // App Account Creation
     Route::get('/Seniors/{id}/app-account/create', [SeniorController::class, 'createAppAccount'])->name('senior.app_account.create');

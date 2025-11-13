@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ $title }}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .report-container {
+            max-width: 1000px;
+            margin: 20px auto;
+            background-color: white;
+            padding: 30px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .report-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+        .logo-container { margin-right: 20px; }
+        .report-logo { max-width: 100px; height: auto; }
+        .header-text h1 { margin: 0; color: #333; font-size: 24px; }
+        .header-text h3 { margin: 5px 0 0; color: #666; font-size: 16px; }
+        .report-summary {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #CC0052;
+        }
+        .report-table-container { overflow-x: auto; }
+        .report-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        .report-table th, .report-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        .report-table th { background-color: #CC0052; color: white; font-weight: bold; }
+        .report-table tr:nth-child(even) { background-color: #f2f2f2; }
+        .report-table tr:hover { background-color: #e9e9e9; }
+        .report-footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px; text-align: center; }
+        @media print {
+            html, body { width: 210mm; min-height: 297mm; background-color: white; }
+            .report-container { box-shadow: none; margin: 0; padding: 20px; max-width: none; width: 100%; }
+            .print-controls { display: none; }
+            thead { display: table-header-group; }
+            /* Allow table to break across pages, prevent row splitting */
+            .report-table tr, .report-table td, .report-table th { page-break-inside: avoid; }
+        }
+        @page { size: A4; margin: 20mm; }
+        .print-controls { text-align: center; margin: 20px 0; }
+        .print-btn { background-color: #CC0052; color: white; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer; border-radius: 4px; }
+        .print-btn:hover { background-color: #a80047; }
+    </style>
+</head>
+<body>
+    <div class="print-controls">
+        <button class="print-btn" onclick="window.print()">
+            <i class="fas fa-print"></i> Print Report
+        </button>
+    </div>
+
+    {!! $content !!}
+
+    <script>
+        window.onload = function() {
+            // window.print(); // enable if auto-print is desired
+        };
+    </script>
+</body>
+</html>
