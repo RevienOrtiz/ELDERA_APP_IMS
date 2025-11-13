@@ -33,7 +33,11 @@
                 <tr>
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $senior->osca_id }}</td>
-                    <td>{{ $senior->first_name }} {{ $senior->last_name }}</td>
+                    <td>
+                        {{ $senior->last_name }}, {{ $senior->first_name }}
+                        {{ $senior->middle_name ? ' ' . $senior->middle_name : '' }}
+                        {{ $senior->name_extension ? ' ' . $senior->name_extension : '' }}
+                    </td>
                     <td>{{ \Carbon\Carbon::parse($senior->date_of_birth)->age }}</td>
                     <td>{{ $senior->sex }}</td>
                     <td>{{ implode('-', array_map('ucfirst', explode('-', $senior->barangay))) }}</td>
@@ -46,15 +50,15 @@
                     <td>
                         @if($senior->status === 'deceased')
                             <button class="btn btn-sm btn-secondary" disabled title="Cannot create app account for deceased senior">
-                                APP ACCOUNT (DISABLED)
+                                App Account
                             </button>
                         @elseif($senior->has_app_account)
                             <a href="{{ route('senior.app_account.edit', $senior->id) }}" class="btn btn-sm btn-success" style="background-color: green;">
-                                APP ACCOUNT
+                                App Account
                             </a>
                         @else
                             <a href="{{ route('senior.app_account.create', $senior->id) }}" class="btn btn-sm btn-danger" style="background-color: pink;">
-                                APP ACCOUNT
+                                App Account
                             </a>
                         @endif
                     </td>
@@ -66,7 +70,7 @@
                             <a href="{{ route('edit_senior', ['id' => $senior->id]) }}" class="btn btn-sm btn-warning">
                                 <i class="fas fa-edit"></i> Edit
                             </a>
-                            <button type="button" class="btn btn-tsm btn-danger" onclick="showDeleteModal('{{ $senior->id }}', '{{ $senior->first_name }} {{ $senior->last_name }}')">
+                            <button type="button" class="btn btn-tsm btn-danger" onclick="showDeleteModal('{{ $senior->id }}', '{{ $senior->last_name }}, {{ $senior->first_name }}{{ $senior->middle_name ? ' ' . $senior->middle_name : '' }}{{ $senior->name_extension ? ' ' . $senior->name_extension : '' }}')">
                                 <i class="fas fa-trash"></i> Delete
                             </button>
                         </div>

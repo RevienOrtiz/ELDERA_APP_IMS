@@ -276,7 +276,7 @@
                     align-items: center;
                 }
                 .report-btn {
-                    background-color: #4CAF50;
+                    background-color: #4CAF50; /* Green */
                     color: white;
                     border: none;
                     padding: 10px 15px;
@@ -291,7 +291,7 @@
                     margin-right: 5px;
                 }
                 .report-btn:hover {
-                    background-color: #45a049;
+                    background-color: #45a049; /* Darker green on hover */
                     color: white;
                 }
             </style>

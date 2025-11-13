@@ -1,4 +1,15 @@
 <!-- ONCBP Report Template -->
+<style>
+    /* Ensure consistent A4 sizing when printing directly from this template */
+    @page { size: A4; margin: 20mm; }
+    @media print {
+        body { background: #fff; }
+        .report-container { box-shadow: none; margin: 0; padding: 20px; max-width: none; width: 100%; }
+        thead { display: table-header-group; }
+        /* Allow table to break across pages, prevent row splitting */
+        .report-table tr, .report-table td, .report-table th { page-break-inside: avoid; }
+    }
+</style>
 <div class="report-container">
     <div class="report-header">
         <div class="logo-container">

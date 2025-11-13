@@ -19,30 +19,35 @@ use Illuminate\Support\Facades\Schema;
 class SeniorController extends Controller
 {
     /**
-     * Generate a PDF report of seniors who can receive pensions
+     * Generate a printable report of social pension applicants (matches the sub-table).
      */
     public function generatePensionReport(Request $request)
     {
-        // Get seniors with pension from the database
-        $pensionSeniors = Senior::select([
-                'id', 'osca_id', 'first_name', 'last_name', 'middle_name', 
-                'sex', 'barangay', 'date_of_birth', 'created_at'
+        // Get social pension applications to match the sub-table count
+        $applications = Application::where('application_type', 'pension')
+            ->whereHas('senior')
+            ->with([
+                'senior' => function($query) {
+                    $query->select('id', 'osca_id', 'first_name', 'last_name', 'middle_name', 'name_extension', 'barangay', 'date_of_birth', 'sex');
+                },
+                'pensionApplication' => function($query) {
+                    $query->select('application_id', 'monthly_income', 'has_pension', 'pension_source', 'pension_amount');
+                }
             ])
-            ->where('has_pension', 1)
-            ->orderBy('last_name')
+            ->orderBy('submitted_at', 'desc')
             ->get();
-            
-        // Generate the PDF view
+
+        // Generate the printable HTML content
         $html = ViewFacade::make('reports.pension_report', [
-            'seniors' => $pensionSeniors,
+            'applications' => $applications,
             'date' => now()->format('F d, Y'),
-            'total' => $pensionSeniors->count()
+            'total' => $applications->count()
         ])->render();
-        
-        // Return the view for browser-based PDF generation
+
+        // Return the wrapper view for print-friendly display
         return response()->view('reports.pension_report_wrapper', [
             'content' => $html,
-            'title' => 'Seniors with Pension Report'
+            'title' => 'Social Pension Applicants Report'
         ]);
     }
     
@@ -90,7 +95,7 @@ class SeniorController extends Controller
     {
         // Optimize seniors query with selective eager loading
         $query = Senior::select([
-            'id', 'osca_id', 'first_name', 'last_name', 'middle_name', 
+            'id', 'osca_id', 'first_name', 'last_name', 'middle_name', 'name_extension',
             'sex', 'barangay', 'has_pension', 'has_app_account', 'status', 'created_at', 'date_of_birth'
         ]);
 
@@ -164,14 +169,14 @@ class SeniorController extends Controller
         // Use smaller page sizes and cache results
         $benefitsApplications = cache()->remember('benefits_applications_page_1', 300, function () {
             return Application::select(['id', 'senior_id', 'status', 'submitted_at', 'created_at'])
-                ->with(['senior:id,osca_id,first_name,last_name,middle_name,barangay,date_of_birth,sex'])
+                ->with(['senior:id,osca_id,first_name,last_name,middle_name,name_extension,barangay,date_of_birth,sex'])
                 ->where('application_type', 'benefits')
                 ->orderBy('created_at', 'desc')
                 ->paginate(10);
         });
             
         $pensionApplications = Application::select(['id', 'senior_id', 'status', 'submitted_at', 'created_at'])
-            ->with(['senior:id,osca_id,first_name,last_name,middle_name,barangay,date_of_birth,sex', 
+            ->with(['senior:id,osca_id,first_name,last_name,middle_name,name_extension,barangay,date_of_birth,sex', 
                     'pensionApplication:application_id,rrn,monthly_income,has_pension,pension_source,pension_amount'])
             ->where('application_type', 'pension')
             ->orderBy('created_at', 'desc')
@@ -179,7 +184,7 @@ class SeniorController extends Controller
             
         $idApplications = cache()->remember('id_applications_page_1', 300, function () {
             return Application::select(['id', 'senior_id', 'status', 'submitted_at', 'created_at'])
-                ->with(['senior:id,osca_id,first_name,last_name,middle_name,barangay,date_of_birth,sex'])
+                ->with(['senior:id,osca_id,first_name,last_name,middle_name,name_extension,barangay,date_of_birth,sex'])
                 ->where('application_type', 'senior_id')
                 ->orderBy('created_at', 'desc')
                 ->paginate(10);
@@ -361,10 +366,10 @@ class SeniorController extends Controller
             'marital_status' => 'required|string|in:Single,Married,Widowed,Separated,Others',
             'sex' => 'required|string|in:Male,Female',
             'contact_number' => 'required|string|max:20',
-            'email' => 'required|email|max:255',
-            'religion' => 'required|string|max:255',
-            'ethnic_origin' => 'required|string|max:255',
-            'language' => 'required|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'religion' => 'nullable|string|max:255',
+            'ethnic_origin' => 'nullable|string|max:255',
+            'language' => 'nullable|string|max:255',
             'osca_id' => 'required|string|max:50|unique:seniors,osca_id,' . $id,
             'gsis_sss' => 'nullable|string|max:50',
             'tin' => 'nullable|string|max:50',
@@ -1242,7 +1247,7 @@ class SeniorController extends Controller
             ->whereHas('benefitsApplication') // Ensure benefits application data exists
             ->with([
                 'senior' => function($query) {
-                    $query->select('id', 'osca_id', 'first_name', 'last_name', 'middle_name', 'barangay', 'date_of_birth', 'sex', 'marital_status', 'contact_number', 'email');
+                    $query->select('id', 'osca_id', 'first_name', 'last_name', 'middle_name', 'name_extension', 'barangay', 'date_of_birth', 'sex', 'marital_status', 'contact_number', 'email');
                 },
                 'benefitsApplication' => function($query) {
                     $query->select('application_id', 'senior_id', 'milestone_age');
@@ -1276,7 +1281,7 @@ class SeniorController extends Controller
             ->whereHas('senior') // Only show applications that have senior data
             ->with([
                 'senior' => function($query) {
-                    $query->select('id', 'osca_id', 'first_name', 'last_name', 'barangay', 'date_of_birth', 'sex');
+                    $query->select('id', 'osca_id', 'first_name', 'last_name', 'middle_name', 'name_extension', 'barangay', 'date_of_birth', 'sex');
                 },
                 'pensionApplication' => function($query) {
                     $query->select('application_id', 'rrn', 'monthly_income', 'has_pension', 'pension_source', 'pension_amount');
@@ -1307,7 +1312,7 @@ class SeniorController extends Controller
             ->whereHas('seniorIdApplication') // Only show applications that have senior ID application data
             ->with([
                 'senior' => function($query) {
-                    $query->select('id', 'osca_id', 'first_name', 'last_name', 'barangay', 'date_of_birth', 'sex');
+                    $query->select('id', 'osca_id', 'first_name', 'last_name', 'middle_name', 'name_extension', 'barangay', 'date_of_birth', 'sex');
                 },
                 'seniorIdApplication' => function($query) {
                     $query->select('application_id', 'full_name', 'gender', 'date_of_birth', 'address');

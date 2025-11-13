@@ -1,17 +1,28 @@
-<!-- Pension Report Template -->
+<!-- Social Pension Applicants Report Template -->
+<style>
+    /* Ensure consistent A4 sizing when printing directly from this template */
+    @page { size: A4; margin: 20mm; }
+    @media print {
+        body { background: #fff; }
+        .report-container { box-shadow: none; margin: 0; padding: 20px; max-width: none; width: 100%; }
+        thead { display: table-header-group; }
+        /* Allow table to break across pages, prevent row splitting */
+        .report-table tr, .report-table td, .report-table th { page-break-inside: avoid; }
+    }
+</style>
 <div class="report-container">
     <div class="report-header">
         <div class="logo-container">
             <img src="{{ asset('images/SOCIAL_PENSION.png') }}" alt="Logo" class="report-logo">
         </div>
         <div class="header-text">
-            <h1>Senior Citizens with Pension</h1>
+            <h1>Social Pension Applicants</h1>
             <h3>Report Date: {{ $date }}</h3>
         </div>
     </div>
 
     <div class="report-summary">
-        <p><strong>Total Seniors with Pension:</strong> {{ $total }}</p>
+        <p><strong>Total Social Pension Applicants:</strong> {{ $total }}</p>
     </div>
 
     <div class="report-table-container">
@@ -24,17 +35,20 @@
                     <th>Age</th>
                     <th>Gender</th>
                     <th>Barangay</th>
+                    <th>Status</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($seniors as $index => $senior)
+                @foreach($applications as $index => $application)
+                @php($senior = $application->senior)
                 <tr>
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $senior->osca_id }}</td>
-                    <td>{{ $senior->first_name }} {{ $senior->middle_name ? substr($senior->middle_name, 0, 1) . '.' : '' }} {{ $senior->last_name }}</td>
+                    <td>{{ $senior->last_name }}, {{ $senior->first_name }}{{ $senior->middle_name ? ' ' . $senior->middle_name : '' }}{{ $senior->name_extension ? ' ' . $senior->name_extension : '' }}</td>
                     <td>{{ \Carbon\Carbon::parse($senior->date_of_birth)->age }}</td>
                     <td>{{ $senior->sex }}</td>
-                    <td>{{ $senior->barangay }}</td>
+                    <td>{{ implode('-', array_map('ucfirst', explode('-', $senior->barangay))) }}</td>
+                    <td>{{ strtoupper($application->status) }}</td>
                 </tr>
                 @endforeach
             </tbody>

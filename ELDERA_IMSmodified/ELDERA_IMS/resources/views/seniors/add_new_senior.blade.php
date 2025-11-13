@@ -221,7 +221,7 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small">7. Contact Number <span style="color: red;">*</span></label>
-                            <input type="tel" name="contact_number" class="form-control form-control-sm" placeholder="Contact Number" required onkeypress="return isNumberKey(event)" onpaste="return validatePaste(event)">
+                            <input type="tel" name="contact_number" id="contact_number" class="form-control form-control-sm" placeholder="11-digit Contact Number" required inputmode="numeric" pattern="^\d{11}$" maxlength="11" onkeypress="return isNumberKey(event)" onpaste="return validatePaste(event)">
                         </div>
                     </div>
 
@@ -233,7 +233,7 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small">9. Religion</label>
-                            <select name="religion" id="religion" class="form-select form-select-sm" required>
+                            <select name="religion" id="religion" class="form-select form-select-sm">
                                 <option value="">Select Religion</option>
                                 <option value="Roman Catholic">Roman Catholic</option>
                                 <option value="Iglesia ni Cristo">Iglesia ni Cristo</option>
@@ -255,7 +255,7 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small">10. Ethnic Origin</label>
-                            <input type="text" name="ethnic_origin" id="ethnic_origin" class="form-control form-control-sm" placeholder="Ethnic Origin" required>
+                            <input type="text" name="ethnic_origin" id="ethnic_origin" class="form-control form-control-sm" placeholder="Ethnic Origin">
                             <div class="invalid-feedback" id="ethnic_origin-error" style="display: none;">
                                 Please enter ethnic origin.
                             </div>
@@ -270,15 +270,15 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-4">
                             <label class="form-label small">12. OSCA ID No. <span style="color: red;">*</span></label>
-                            <input type="text" name="osca_id" class="form-control form-control-sm" placeholder="OSCA ID Number" required onkeypress="return isNumberKey(event)" onpaste="return validatePaste(event)">
+                            <input type="text" name="osca_id" class="form-control form-control-sm" placeholder="OSCA ID Number" required onkeypress="return isIdKey(event)" onpaste="return validateIdPaste(event)">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small">13. GSIS/SSS No.</label>
-                            <input type="text" name="gsis_sss" class="form-control form-control-sm" placeholder="GSIS/SSS Number" onkeypress="return isNumberKey(event)" onpaste="return validatePaste(event)">
+                            <input type="text" name="gsis_sss" class="form-control form-control-sm" placeholder="GSIS/SSS Number" onkeypress="return isIdKey(event)" onpaste="return validateIdPaste(event)">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small">14. TIN</label>
-                            <input type="text" name="tin" class="form-control form-control-sm" placeholder="Tax Identification Number" onkeypress="return isNumberKey(event)" onpaste="return validatePaste(event)">
+                            <input type="text" name="tin" class="form-control form-control-sm" placeholder="Tax Identification Number" onkeypress="return isIdKey(event)" onpaste="return validateIdPaste(event)">
                         </div>
                     </div>
 
@@ -286,15 +286,15 @@
                     <div class="row g-3 mb-4">
                         <div class="col-md-4">
                             <label class="form-label small">15. PhilHealth No.</label>
-                            <input type="text" name="philhealth" class="form-control form-control-sm" placeholder="PhilHealth Number" onkeypress="return isNumberKey(event)" onpaste="return validatePaste(event)">
+                            <input type="text" name="philhealth" class="form-control form-control-sm" placeholder="PhilHealth Number" onkeypress="return isIdKey(event)" onpaste="return validateIdPaste(event)">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small">16. SC Association ID No.</label>
-                            <input type="text" name="sc_association" class="form-control form-control-sm" placeholder="Senior Citizen Association ID" onkeypress="return isNumberKey(event)" onpaste="return validatePaste(event)">
+                            <input type="text" name="sc_association" class="form-control form-control-sm" placeholder="Senior Citizen Association ID" onkeypress="return isIdKey(event)" onpaste="return validateIdPaste(event)">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small">17. Other Gov't ID No.</label>
-                            <input type="text" name="other_govt_id" class="form-control form-control-sm" placeholder="Other Government ID" onkeypress="return isNumberKey(event)" onpaste="return validatePaste(event)">
+                            <input type="text" name="other_govt_id" class="form-control form-control-sm" placeholder="Other Government ID" onkeypress="return isIdKey(event)" onpaste="return validateIdPaste(event)">
                         </div>
                     </div>
 
@@ -2608,6 +2608,23 @@
                     isValid = false;
                 }
             });
+
+            // Constraint validation for fields with pattern or type requirements
+            const fieldsToCheck = currentStepElement.querySelectorAll('input, select, textarea');
+            fieldsToCheck.forEach(field => {
+                const needsCheck = field.hasAttribute('required') || field.hasAttribute('pattern') || field.type === 'email';
+                if (needsCheck) {
+                    // Clear previous error styling; we'll reapply if invalid
+                    field.style.borderColor = '';
+                    field.style.borderWidth = '';
+                    if (!field.checkValidity()) {
+                        field.style.borderColor = '#dc3545';
+                        field.style.borderWidth = '2px';
+                        if (!firstInvalidField) firstInvalidField = field;
+                        isValid = false;
+                    }
+                }
+            });
             
             // If validation fails, scroll to first invalid field and focus it
             if (!isValid && firstInvalidField) {
@@ -2617,6 +2634,10 @@
                 // Focus the field after a short delay to ensure scroll completes
                 setTimeout(() => {
                     firstInvalidField.focus();
+                    // Trigger native validity message if available
+                    if (typeof firstInvalidField.reportValidity === 'function') {
+                        firstInvalidField.reportValidity();
+                    }
                     
                     // Add a shake animation to the field
                     firstInvalidField.style.animation = 'shake 0.5s';

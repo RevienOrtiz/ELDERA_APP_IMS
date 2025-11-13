@@ -33,23 +33,27 @@
             margin-bottom: 20px;
             padding: 15px;
             background-color: #f9f9f9;
-            border-left: 4px solid #4CAF50;
+            border-left: 4px solid #CC0052;
         }
         .report-table-container { overflow-x: auto; }
         .report-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
         .report-table th, .report-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        .report-table th { background-color: #4CAF50; color: white; font-weight: bold; }
+        .report-table th { background-color: #CC0052; color: white; font-weight: bold; }
         .report-table tr:nth-child(even) { background-color: #f2f2f2; }
         .report-table tr:hover { background-color: #e9e9e9; }
         .report-footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px; text-align: center; }
         @media print {
-            body { background-color: white; }
-            .report-container { box-shadow: none; margin: 0; padding: 20px; }
+            html, body { width: 210mm; min-height: 297mm; background-color: white; }
+            .report-container { box-shadow: none; margin: 0; padding: 20px; max-width: none; width: 100%; }
             .print-controls { display: none; }
+            thead { display: table-header-group; }
+            /* Allow table to break across pages, prevent row splitting */
+            .report-table tr, .report-table td, .report-table th { page-break-inside: avoid; }
         }
+        @page { size: A4; margin: 20mm; }
         .print-controls { text-align: center; margin: 20px 0; }
-        .print-btn { background-color: #4CAF50; color: white; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer; border-radius: 4px; }
-        .print-btn:hover { background-color: #45a049; }
+        .print-btn { background-color: #CC0052; color: white; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer; border-radius: 4px; }
+        .print-btn:hover { background-color: #a80047; }
     </style>
 </head>
 <body>

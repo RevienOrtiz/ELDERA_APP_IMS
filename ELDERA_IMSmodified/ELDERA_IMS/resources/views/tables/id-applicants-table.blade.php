@@ -18,7 +18,15 @@
             <tr>
                 <td>{{ $index + 1 }}</td>
                 <td>{{ $application->senior ? $application->senior->osca_id : 'N/A' }}</td>
-                <td>{{ $application->senior ? ucwords(strtolower($application->senior->full_name)) : 'N/A' }}</td>
+                <td>
+                    @if($application->senior)
+                        {{ $application->senior->last_name }}, {{ $application->senior->first_name }}
+                        {{ $application->senior->middle_name ? ' ' . $application->senior->middle_name : '' }}
+                        {{ $application->senior->name_extension ? ' ' . $application->senior->name_extension : '' }}
+                    @else
+                        N/A
+                    @endif
+                </td>
                 <td>{{ $application->senior && $application->senior->date_of_birth ? \Carbon\Carbon::parse($application->senior->date_of_birth)->age : 'N/A' }}</td>
                 <td>{{ $application->senior ? ucfirst($application->senior->sex) : 'N/A' }}</td>
                 <td>{{ $application->senior ? ucfirst($application->senior->barangay) : 'N/A' }}</td>
@@ -35,7 +43,7 @@
                         <a href="{{ route('seniors.id-application.edit', $application->id) }}" class="btn btn-sm btn-warning">
                             <i class="fas fa-edit"></i> Edit
                         </a>
-                        <button class="btn btn-sm btn-danger" onclick="showDeleteModal('{{ $application->id }}', '{{ $application->senior ? ucwords(strtolower($application->senior->full_name)) : 'N/A' }}', 'id')">
+                        <button class="btn btn-sm btn-danger" onclick="showDeleteModal('{{ $application->id }}', '{{ $application->senior ? ($application->senior->last_name . ', ' . $application->senior->first_name . ($application->senior->middle_name ? ' ' . $application->senior->middle_name : '') . ($application->senior->name_extension ? ' ' . $application->senior->name_extension : '')) : 'N/A' }}', 'id')">
                             <i class="fas fa-trash"></i> Delete
                         </button>
                     </div>

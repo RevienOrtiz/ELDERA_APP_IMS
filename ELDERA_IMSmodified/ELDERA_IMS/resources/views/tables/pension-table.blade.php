@@ -19,7 +19,15 @@
             <tr>
                 <td>{{ $index + 1 }}</td>
                 <td>{{ $application->senior ? $application->senior->osca_id : 'N/A' }}</td>
-                <td>{{ $application->senior ? $application->senior->first_name . ' ' . $application->senior->last_name : 'N/A' }}</td>
+                <td>
+                    @if($application->senior)
+                        {{ $application->senior->last_name }}, {{ $application->senior->first_name }}
+                        {{ $application->senior->middle_name ? ' ' . $application->senior->middle_name : '' }}
+                        {{ $application->senior->name_extension ? ' ' . $application->senior->name_extension : '' }}
+                    @else
+                        N/A
+                    @endif
+                </td>
                 <td>{{ $application->senior ? \Carbon\Carbon::parse($application->senior->date_of_birth)->age : 'N/A' }}</td>
                 <td>{{ $application->senior ? $application->senior->sex : 'N/A' }}</td>
                 <td>{{ $application->senior ? ucfirst($application->senior->barangay) : 'N/A' }}</td>
@@ -37,7 +45,7 @@
                         <a href="{{ route('seniors.pension.edit', $application->id) }}" class="btn btn-sm btn-warning" title="Edit">
                             <i class="fas fa-edit"></i> Edit
                         </a>
-                        <button type="button" class="btn btn-sm btn-danger" title="Delete" onclick="showDeleteModal('{{ $application->id }}', '{{ $application->senior ? $application->senior->first_name . ' ' . $application->senior->last_name : 'N/A' }}', 'pension')">
+                        <button type="button" class="btn btn-sm btn-danger" title="Delete" onclick="showDeleteModal('{{ $application->id }}', '{{ $application->senior ? ($application->senior->last_name . ', ' . $application->senior->first_name . ($application->senior->middle_name ? ' ' . $application->senior->middle_name : '') . ($application->senior->name_extension ? ' ' . $application->senior->name_extension : '')) : 'N/A' }}', 'pension')">
                             <i class="fas fa-trash"></i> Delete
                         </button>
                     </div>
