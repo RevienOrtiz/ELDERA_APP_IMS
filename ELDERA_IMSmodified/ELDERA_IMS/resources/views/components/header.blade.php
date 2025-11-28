@@ -92,17 +92,6 @@
         background: #f0f0f0;
     }
 
-    .calendar-icon-button.has-events::after {
-        content: '';
-        position: absolute;
-        top: 6px;
-        right: 6px;
-        width: 8px;
-        height: 8px;
-        background: #e31575;
-        border-radius: 50%;
-        border: 2px solid white;
-    }
 
     .calendar-dropdown {
         position: absolute;
@@ -126,8 +115,9 @@
 
     .calendar-dropdown-header {
         padding: 12px 16px;
-        background: #f8f9fa;
-        border-bottom: 1px solid #e0e0e0;
+        background: #1f2937;
+        color: #ffffff;
+        border-bottom: none;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -136,7 +126,7 @@
     .calendar-dropdown-title {
         font-weight: 600;
         font-size: 14px;
-        color: #333;
+        color: #ffffff;
     }
 
     .calendar-dropdown-close {
@@ -144,7 +134,7 @@
         border: none;
         font-size: 18px;
         cursor: pointer;
-        color: #666;
+        color: #ffffff;
         padding: 0;
         width: 24px;
         height: 24px;
@@ -155,7 +145,7 @@
     }
 
     .calendar-dropdown-close:hover {
-        background: #e9ecef;
+        background: rgba(255, 255, 255, 0.12);
     }
 
     .calendar-dropdown-body {
@@ -177,7 +167,7 @@
     }
 
     .mini-calendar-nav-btn {
-        background: #277da1;
+        background: #e31575;
         color: white;
         border: none;
         border-radius: 4px;
@@ -193,7 +183,7 @@
     }
 
     .mini-calendar-nav-btn:hover {
-        background: #1e6b8c;
+        background: #FFB7CE;
     }
 
     .mini-calendar-month-year {
@@ -272,23 +262,23 @@
     }
 
     .mini-calendar-day.event-general {
-        background: #e8f5e8 !important;
-        color: #2e7d32 !important;
+        background: #86efac !important; /* banner accent-1 */
+        color: #0b3b22 !important;
     }
 
     .mini-calendar-day.event-health {
-        background: #ffebee !important;
-        color: #c62828 !important;
+        background: #fca5a5 !important; /* banner accent-1 */
+        color: #5b0f0f !important;
     }
 
     .mini-calendar-day.event-pension {
-        background: #e3f2fd !important;
-        color: #1565c0 !important;
+        background: #93c5fd !important; /* banner accent-1 */
+        color: #0b2a6b !important;
     }
 
     .mini-calendar-day.event-id {
-        background: #fffde7 !important;
-        color: #f57f17 !important;
+        background: #fde68a !important; /* banner accent-1 */
+        color: #4a3200 !important;
     }
 
     .mini-calendar-event-indicator {
@@ -318,6 +308,26 @@
     .icon-button:hover {
         background: #f0f0f0;
     }
+
+    /* Icon-only back button (no box) */
+    .back-arrow {
+        background: transparent;
+        border: none;
+        padding: 0;
+        margin: 0;
+        width: auto;
+        height: auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #555;
+        font-size: 18px;
+        line-height: 1;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .back-arrow:hover { color: #111; background: transparent; }
+    .back-arrow:focus { outline: none; }
 
     .envelope-button {
         background: #555;
@@ -416,6 +426,9 @@
 
     <div class="header">
         <div class="dashboard-title">
+            <button class="back-arrow" id="globalBackBtn" title="Back" aria-label="Back">
+                <i class="fas fa-arrow-left"></i>
+            </button>
             @if(isset($attributes) && $attributes->has('icon'))
                 <div class="page-icon">
                     <i class="{{ $attributes->get('icon') }}"></i>
@@ -501,7 +514,26 @@
     @include('message.popup_message')
 
     <script>
-        
+        // Global Back Button: works across all pages
+        function handleGlobalBack() {
+            try {
+                const ref = document.referrer;
+                const sameOrigin = ref && new URL(ref).origin === window.location.origin;
+                if (sameOrigin && window.history.length > 1) {
+                    window.history.back();
+                } else {
+                    // Fallback to dashboard
+                    window.location.href = '{{ route('dashboard') }}';
+                }
+            } catch (e) {
+                window.location.href = '{{ route('dashboard') }}';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const backBtn = document.getElementById('globalBackBtn');
+            if (backBtn) backBtn.addEventListener('click', handleGlobalBack);
+        });
 
         class AdminDropdown {
             constructor() {
@@ -728,23 +760,23 @@
                                 const indicator = document.createElement('div');
                                 indicator.className = 'mini-calendar-event-indicator';
                                 
-                                // Set color based on event type
-                                let color = '#4caf50';
+                                // Set color based on event type (banner accent-2)
+                                let color = '#22c55e';
                                 switch(eventType) {
                                     case 'general':
-                                        color = '#4caf50';
+                                        color = '#22c55e';
                                         break;
                                     case 'health':
-                                        color = '#f44336';
+                                        color = '#ef4444';
                                         break;
                                     case 'pension':
-                                        color = '#2196f3';
+                                        color = '#3b82f6';
                                         break;
                                     case 'id_claiming':
-                                        color = '#ffc107';
+                                        color = '#f59e0b';
                                         break;
                                     default:
-                                        color = '#4caf50';
+                                        color = '#22c55e';
                                 }
                                 
                                 indicator.style.backgroundColor = color;

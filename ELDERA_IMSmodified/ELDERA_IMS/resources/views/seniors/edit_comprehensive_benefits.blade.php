@@ -812,7 +812,6 @@
                             <div class="submit-button-container">
                                 <div class="d-flex gap-3 justify-content-center">
                                     <button type="button" class="btn btn-primary" onclick="confirmUpdate()">SAVE CHANGES</button>
-                                    <a href="{{ route('seniors') }}" class="btn btn-secondary">BACK</a>
                     </div>
                         </div>
                         

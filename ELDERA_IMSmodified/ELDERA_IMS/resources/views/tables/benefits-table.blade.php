@@ -21,16 +21,16 @@
                 <td>{{ $application->senior ? $application->senior->osca_id : 'N/A' }}</td>
                 <td>
                     @if($application->senior)
-                        {{ $application->senior->last_name }}, {{ $application->senior->first_name }}
-                        {{ $application->senior->middle_name ? ' ' . $application->senior->middle_name : '' }}
-                        {{ $application->senior->name_extension ? ' ' . $application->senior->name_extension : '' }}
+                        {{ ucfirst($application->senior->last_name) }}, {{ ucfirst($application->senior->first_name) }}
+                        {{ $application->senior->middle_name ? ' ' . ucfirst($application->senior->middle_name) : '' }}
+                        {{ $application->senior->name_extension ? ' ' . ucfirst($application->senior->name_extension) : '' }}
                     @else
                         N/A
                     @endif
                 </td>
                 <td>{{ $application->senior ? \Carbon\Carbon::parse($application->senior->date_of_birth)->age : 'N/A' }}</td>
-                <td>{{ $application->senior ? $application->senior->sex : 'N/A' }}</td>
-                <td>{{ $application->senior ? ucfirst($application->senior->barangay) : 'N/A' }}</td>
+                <td>{{ $application->senior ? ucfirst($application->senior->sex) : 'N/A' }}</td>
+                <td>{{ $application->senior ? implode('-', array_map('ucfirst', explode('-', $application->senior->barangay))) : 'N/A' }}</td>
                 <td>{{ $application->benefitsApplication && $application->benefitsApplication->milestone_age ? $application->benefitsApplication->milestone_age : 'N/A' }}</td>
                 <td>
                     <span class="status-badge status-{{ $application->status }}" title="Status: {{ $application->status }}">

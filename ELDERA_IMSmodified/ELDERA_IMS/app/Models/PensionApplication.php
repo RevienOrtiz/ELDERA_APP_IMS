@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PensionApplication extends Model
 {
     use HasFactory;
+    protected $connection = 'eldera_ims';
 
     protected $fillable = [
         'application_id',

@@ -102,7 +102,7 @@
     <div id="eventModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="modalTitle">Add New Event</h2>
+                <h2 id="modalTitle">ADD NEW EVENT</h2>
                 <button class="close-btn" onclick="closeEventModal()">
                         ×
                     </button>
@@ -153,21 +153,7 @@
                         <input type="text" class="form-control" id="eventLocation" placeholder="Enter location">
                     </div>
                     
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="eventOrganizer" class="form-label fw-semibold">Organizer</label>
-                            <input type="text" class="form-control" id="eventOrganizer" placeholder="Enter organizer" value="LCSCF Office">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="eventContactPerson" class="form-label fw-semibold">Contact Person</label>
-                            <input type="text" class="form-control" id="eventContactPerson" placeholder="Enter contact person" value="Event Coordinator">
-                        </div>
-                    </div>
                     
-                    <div class="mb-3">
-                        <label for="eventContactNumber" class="form-label fw-semibold">Contact Number</label>
-                        <input type="text" class="form-control" id="eventContactNumber" placeholder="Enter contact number" value="000-000-0000">
-                    </div>
 
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Target Recipients Selection</label>
@@ -235,7 +221,7 @@
                                             <div class="form-check">
                                                 <input type="checkbox" id="category_pension" name="selectedCategories[]" value="pension" class="form-check-input">
                                                 <label for="category_pension" class="form-check-label">
-                                                    <strong>Pension Recipients</strong><br>
+                                                    <strong>Pension Applicants</strong><br>
                                                     <small class="text-muted">Seniors listed in the pension table</small>
                                                 </label>
                                             </div>
@@ -259,11 +245,11 @@
                             </div>
                         </div>
                     </div>
-                    <div class="mb-3">
+                    <!-- <div class="mb-3">
                         <label for="eventLogo" class="form-label fw-semibold">Event Logo</label>
                         <input type="file" class="form-control" id="eventLogo" accept="image/*">
                         <div class="form-text">Upload an image file (JPG, PNG, GIF)</div>
-                    </div>
+                    </div> -->
                     <div class="d-flex justify-content-end gap-2 pt-3 border-top">
                         <button type="button" class="btn btn-secondary" onclick="closeEventModal()">Cancel</button>
                         <button type="submit" class="btn btn-primary" style="background-color: #e31575; border-color: #e31575;">Save Event</button>
@@ -279,6 +265,11 @@
 
     <style>
         body { margin: 0; }
+
+        /* Disable page scroll when modal is open */
+        html.no-scroll, body.no-scroll {
+            overflow: hidden;
+        }
 
         .main {
             margin-left: 250px;
@@ -296,7 +287,7 @@
             flex-direction: column;
             background: #fff;
             height: 100%;
-            border-radius: 12px;
+            border-radius: 0;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
@@ -306,8 +297,8 @@
             align-items: center;
             justify-content: space-between;
             padding: 12px 24px;
-            border-bottom: 1px solid #dadce0;
-            background: #fff;
+            background: #1f2937;
+            color: #ffffff;
             min-height: 64px;
         }
 
@@ -331,7 +322,7 @@
             padding: 8px;
             border-radius: 4px;
             transition: all 0.2s;
-            color: #5f6368;
+            color: #e5e7eb;
             width: 40px;
             height: 40px;
             display: flex;
@@ -340,8 +331,8 @@
         }
         
         .nav-btn:hover {
-            background: #f1f3f4;
-            color: #202124;
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
         }
         
         .today-btn {
@@ -371,7 +362,7 @@
         .calendar-title {
             font-size: 22px;
             font-weight: 400;
-            color: #3c4043;
+            color: #ffffff;
             margin-left: 8px;
         }
         
@@ -595,6 +586,20 @@
             justify-content: flex-end;
         }
 
+        .day-delete-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 10px;
+            padding: 0;
+            border: none;
+            background: transparent;
+            line-height: 1;
+        }
+        .day-delete-btn:hover { opacity: 0.85; }
+
         .attendance-link {
             color: white;
             text-decoration: none;
@@ -632,28 +637,34 @@
         }
 
         .day-event.general {
-            background: #42F477FF;
+            background: #22c55e;
         }
 
         .day-event.health {
-            background: #ea4335;
+            background: #ef4444;
         }
 
         .day-event.pension {
-            background: #4285f4;
+            background: #3b82f6;
         }
 
         .day-event.id_claiming {
-            background: #ffc107 !important;
+            background: #f59e0b !important;
+        }
+        .day-event.done {
+            background: #6b7280 !important;
+            opacity: 0.9;
         }
 
         /* Full-cell coloring for days with events */
         .calendar-day.has-event { color: #fff; }
         .calendar-day.has-event .day-number { color: #fff; }
-        .calendar-day.general-bg { background: #42F477FF; }
-        .calendar-day.health-bg { background: #ea4335; }
-        .calendar-day.pension-bg { background: #4285f4; }
-        .calendar-day.id_claiming-bg { background: #ffc107 !important; }
+        .calendar-day.general-bg { background: #22c55e; }
+        .calendar-day.health-bg { background: #ef4444; }
+        .calendar-day.pension-bg { background: #3b82f6; }
+        .calendar-day.id_claiming-bg { background: #f59e0b !important; }
+        .calendar-day.done-state { background: #6b7280 !important; }
+        .calendar-day.done-state .day-number { color: #fff; }
         .calendar-day.has-event .day-events { display: none; }
         .calendar-day .event-label {
             position: absolute;
@@ -669,6 +680,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        .calendar-day .event-label.done { background: rgba(75,85,99,0.7); }
 
         /* Responsive Design */
         @media (max-width: 768px) {
@@ -712,30 +724,36 @@
         }
 
         /* Modal Styles */
-        .modal {
+        #eventModal {
             display: none;
             position: fixed;
             z-index: 1000;
-            left: 0;
-            top: 0;
+            inset: 0;
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
+            /* Center the modal content */
+            align-items: center;
+            justify-content: center;
+            padding: 24px; /* small padding so content doesn’t touch edges */
         }
 
-        .modal-content {
+        #eventModal .modal-content {
             background-color: #fff;
-            margin: 5% auto;
+            margin: 0;
             padding: 0;
-            border-radius: 8px;
+            border-radius: 10px;
             width: 90%;
             max-width: 600px;
             max-height: 90vh;
-            overflow-y: auto;
+            /* Make header fixed and content scrollable */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
-        .modal-header {
+        #eventModal .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -744,6 +762,10 @@
             background: #e31575;
             color: white;
             border-radius: 8px 8px 0 0;
+            /* Keep header fixed at top when modal content scrolls */
+            position: sticky;
+            top: 0;
+            z-index: 2;
         }
         
         .modal-header h2 {
@@ -768,6 +790,13 @@
             background: rgba(255,255,255,0.2);
         }
         
+        /* Make the modal body the scroll container */
+        #eventModal .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
         .event-form {
             padding: 20px;
         }
@@ -1014,7 +1043,7 @@
 
 .recipient-option:has(input:checked) {
     border-color: #e31575;
-    background: linear-gradient(135deg, #fefcff 0%, #fdf2f8 100%);
+    background: #fdf2f8;
     box-shadow: 0 4px 12px rgba(227, 21, 117, 0.15);
 }
 
@@ -1116,7 +1145,7 @@
     padding: 20px;
     border: 2px solid #e3f2fd;
     border-radius: 12px;
-    background: linear-gradient(135deg, #f8fdff 0%, #e3f2fd 100%);
+    background: #e3f2fd;
     box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
 }
 
@@ -1218,9 +1247,9 @@
                 grid-template-columns: 1fr;
             }
 
-            .modal-content {
+            #eventModal .modal-content {
                 width: 95%;
-                margin: 10% auto;
+                margin: 0;
             }
         }
         
@@ -1251,7 +1280,8 @@
                 'end_time' => $event->end_time ? $event->end_time->format('H:i') : null,
                 'description' => $event->description,
                 'location' => $event->location,
-                'status' => $event->status
+                'status' => $event->computed_status,
+                'status_text' => $event->computed_status_text
             ];
         })) !!};
 
@@ -1406,14 +1436,14 @@
         function validateRecipientSelection(recipientData) {
             // Check if at least one recipient type is selected
             if (!recipientData.types || recipientData.types.length === 0) {
-                alert('Please select at least one recipient type.');
+                try { showValidationErrorModal('Validation Error', 'Please select at least one recipient type.'); } catch (e) {}
                 return false;
             }
             
             // If barangay filter is selected, ensure at least one barangay is chosen
             if (recipientData.types.includes('barangay')) {
                 if (!recipientData.barangays || recipientData.barangays.length === 0) {
-                    alert('Please select at least one barangay.');
+                    try { showValidationErrorModal('Validation Error', 'Please select at least one barangay.'); } catch (e) {}
                     return false;
                 }
             }
@@ -1421,7 +1451,7 @@
             // If category filter is selected, ensure at least one category is chosen
             if (recipientData.types.includes('category')) {
                 if (!recipientData.categories || recipientData.categories.length === 0) {
-                    alert('Please select at least one category.');
+                    try { showValidationErrorModal('Validation Error', 'Please select at least one category.'); } catch (e) {}
                     return false;
                 }
             }
@@ -1464,6 +1494,9 @@
         }
 
         function renderCalendar() {
+            if (!currentDate || isNaN(currentDate.getTime())) {
+                currentDate = new Date();
+            }
             if (currentView === 'month') {
                 renderMonthView();
             } else if (currentView === 'week') {
@@ -1496,7 +1529,7 @@
                 const isOtherMonth = date.getMonth() !== month;
                 const isToday = isSameDate(date, new Date());
                 const dayEvents = getEventsForDate(date);
-                const eventClass = dayEvents.length ? `has-event ${dayEvents[0].type}-bg` : '';
+                const eventClass = dayEvents.length ? `has-event ${dayEvents[0].type}-bg ${dayEvents[0].status}-state` : '';
                 
                 html += `
                     <div class="calendar-day ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${eventClass}" 
@@ -1504,7 +1537,7 @@
                         <div class="day-number">${date.getDate()}</div>
                         <div class="day-events">
                             ${dayEvents.map(event => `
-                                <div class="day-event ${event.type}" title="${event.title}" onclick="window.location.href='/Events/${event.id}'">
+                                <div class="day-event ${event.type} ${event.status}" title="${event.title}" onclick="window.location.href='/Events/${event.id}'">
                                     <div class="event-title">${event.title}</div>
                                     <div class="event-actions">
                                         <a href="/Events/${event.id}" class="view-link" title="View Event Details" onclick="event.stopPropagation();">
@@ -1514,7 +1547,7 @@
                                 </div>
                             `).join('')}
                         </div>
-                        ${dayEvents.length ? `<div class="event-label" title="${dayEvents[0].title}">${dayEvents[0].title}<br><a href="/Events/${dayEvents[0].id}" class="event-view-link" onclick="event.stopPropagation();" title="View Event Details"><i class="fas fa-eye"></i> View Details</a></div>` : ''}
+                        ${dayEvents.length ? `<a href="#" class="day-delete-btn" onclick="event.stopPropagation(); showConfirmModal('Delete Event', 'Are you sure you want to delete this event?', '/Events/${dayEvents[0].id}', 'DELETE');" title="Delete Event"><i class="fas fa-trash"></i></a><div class="event-label ${dayEvents[0].status}" title="${dayEvents[0].title}">${dayEvents[0].title}<br><a href="/Events/${dayEvents[0].id}" class="event-view-link" onclick="event.stopPropagation();" title="View Event Details"><i class="fas fa-eye"></i> View Details</a></div>` : ''}
                     </div>
                 `;
             }
@@ -1559,7 +1592,10 @@
 
         function updateCalendarTitle() {
             const options = { year: 'numeric', month: 'long' };
-            document.getElementById('calendarTitle').textContent = currentDate.toLocaleDateString('en-US', options);
+            const titleEl = document.getElementById('calendarTitle');
+            if (titleEl) {
+                titleEl.textContent = currentDate.toLocaleDateString('en-US', options);
+            }
         }
 
         function previousMonth() {
@@ -1620,10 +1656,12 @@
         function setView(view) {
             currentView = view;
             document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            document.querySelectorAll('.calendar-view').forEach(view => view.classList.remove('active'));
-            document.getElementById(view + 'View').classList.add('active');
-            renderCalendar();
+            const activeBtn = document.querySelector(`.view-btn[data-view="${view}"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+            document.querySelectorAll('.calendar-view').forEach(v => v.classList.remove('active'));
+            const targetView = document.getElementById(view + 'View');
+            if (targetView) targetView.classList.add('active');
+            try { renderCalendar(); } catch (e) { console.error('Calendar render failed', e); }
         }
 
         function selectDate(date) {
@@ -1633,13 +1671,16 @@
 
         // Modal functions
         function openEventModal() {
-            document.getElementById('eventModal').style.display = 'block';
-            document.body.style.overflow = 'hidden';
+            const modal = document.getElementById('eventModal');
+            modal.style.display = 'flex'; // use flex so content is centered
+            document.body.classList.add('no-scroll');
+            document.documentElement.classList.add('no-scroll');
         }
 
         function closeEventModal() {
             document.getElementById('eventModal').style.display = 'none';
-            document.body.style.overflow = 'auto';
+            document.body.classList.remove('no-scroll');
+            document.documentElement.classList.remove('no-scroll');
             document.getElementById('eventForm').reset();
         }
 
@@ -1663,40 +1704,40 @@
             const eventLocation = document.getElementById('eventLocation').value.trim();
             
             if (!eventTitle) {
-                alert('Please enter an event title.');
+                try { showValidationErrorModal('Validation Error', 'Please enter an event title.'); } catch (e) {}
                 document.getElementById('eventTitle').focus();
                 return;
             }
             
             if (!eventType) {
-                alert('Please select an event type.');
+                try { showValidationErrorModal('Validation Error', 'Please select an event type.'); } catch (e) {}
                 document.getElementById('eventType').focus();
                 return;
             }
             
             if (!eventDate) {
-                alert('Please select an event date.');
+                try { showValidationErrorModal('Validation Error', 'Please select an event date.'); } catch (e) {}
                 document.getElementById('eventDate').focus();
                 return;
             }
             
             if (!eventTime) {
-                alert('Please select an event time.');
+                try { showValidationErrorModal('Validation Error', 'Please select an event time.'); } catch (e) {}
                 document.getElementById('eventTime').focus();
                 return;
             }
             
             if (!eventLocation) {
-                alert('Please enter an event location.');
+                try { showValidationErrorModal('Validation Error', 'Please enter an event location.'); } catch (e) {}
                 document.getElementById('eventLocation').focus();
                 return;
             }
             
             // Validate date is not in the past
             const selectedDate = new Date(eventDate + 'T' + eventTime);
-            const currentDate = new Date();
-            if (selectedDate < currentDate) {
-                alert('Please select a future date and time for the event.');
+            const now = new Date();
+            if (selectedDate < now) {
+                try { showValidationErrorModal('Validation Error', 'Please select a future date and time for the event.'); } catch (e) {}
                 document.getElementById('eventDate').focus();
                 return;
             }
@@ -1718,34 +1759,81 @@
             formData.append('end_time', document.getElementById('eventEndTime').value);
             formData.append('description', document.getElementById('eventDescription').value);
             formData.append('location', document.getElementById('eventLocation').value);
-            formData.append('organizer', document.getElementById('eventOrganizer').value);
-            formData.append('contact_person', document.getElementById('eventContactPerson').value);
-            formData.append('contact_number', document.getElementById('eventContactNumber').value);
+            
+            // Include recipient selection for backend processing
+            formData.append('recipient_selection', JSON.stringify(recipientData));
             formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
             // Submit to server
+            let saveSucceeded = false;
             fetch('/Events', {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 }
             })
             .then(response => {
-                if (response.ok) {
-                    // Success - reload the page to show updated events
-                    closeEventModal();
-                    location.reload();
-                } else {
-                    throw new Error('Server error');
+                const contentType = response.headers.get('Content-Type') || '';
+                if (!response.ok) {
+                    return response.json().then(err => { throw err; }).catch(() => { throw new Error('Server error'); });
                 }
+                if (contentType.includes('application/json')) {
+                    return response.json().catch(() => ({ success: true }));
+                }
+                // Treat successful non-JSON responses (e.g., redirects to HTML) as success
+                return { success: true };
+            })
+            .then(data => {
+                if (!data || data.success !== true) {
+                    const msg = (data && data.message) ? data.message : 'Error saving event. Please try again.';
+                    throw new Error(msg);
+                }
+
+                // Capture field values BEFORE closing modal (closing resets the form)
+                const savedTitle = document.getElementById('eventTitle').value;
+                const savedType = document.getElementById('eventType').value;
+                const savedDate = document.getElementById('eventDate').value;
+                const savedTime = document.getElementById('eventTime').value;
+                const savedEndTime = document.getElementById('eventEndTime').value || null;
+                const savedDescription = document.getElementById('eventDescription').value;
+                const savedLocation = document.getElementById('eventLocation').value;
+
+                closeEventModal();
+                try { window.showSuccessModal('Event successfully added.', 'added'); } catch (e) {}
+
+                const newEvent = {
+                    id: data.event_id || null,
+                    title: savedTitle,
+                    type: savedType,
+                    date: savedDate,
+                    time: savedTime,
+                    end_time: savedEndTime,
+                    description: savedDescription,
+                    location: savedLocation,
+                    status: 'upcoming'
+                };
+                events.push(newEvent);
+                const parsed = new Date(newEvent.date + 'T00:00:00');
+                currentDate = isNaN(parsed.getTime()) ? new Date() : parsed;
+                try { renderCalendar(); } catch (e) { console.error('Calendar rerender failed', e); }
+                saveSucceeded = true;
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error saving event. Please try again.');
+                if (!saveSucceeded) {
+                    try {
+                        const errModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                        const msg = (error && error.errors) ? 'Please check all required fields.' : (error && error.message) ? error.message : 'Error saving event. Please try again.';
+                        document.getElementById('errorMessage').innerText = msg;
+                        errModal.show();
+                    } catch (e) {
+                        try { showValidationErrorModal('Error', 'Error saving event. Please try again.'); } catch (_) {}
+                    }
+                }
             });
         });
     </script>
   </x-head>
 </x-sidebar>
-

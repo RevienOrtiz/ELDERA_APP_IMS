@@ -5,9 +5,6 @@
             <div class="form-container">
                 <div class="form-header">
                     <h2 class="form-title">Create New Event</h2>
-                    <a href="{{ route('events') }}" class="back-btn">
-                        <i class="fas fa-arrow-left"></i> Back to Events
-                    </a>
                 </div>
 
                 <form method="POST" action="{{ route('events.store') }}" class="event-form">
@@ -108,14 +105,7 @@
                     <div class="form-section">
                         <h3 class="section-title">Event Details</h3>
                         
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="max_participants" class="form-label">Maximum Participants</label>
-                                <input type="number" id="max_participants" name="max_participants" class="form-control" 
-                                       value="{{ old('max_participants') }}" min="1">
-                                <small class="form-text">Leave empty for unlimited participants</small>
-                            </div>
-                        </div>
+                        <!-- Removed max participants option: events now auto-register all selected seniors -->
 
                         <div class="form-row">
                             <div class="form-group">
@@ -155,7 +145,7 @@
             }
 
             .form-header {
-                background: linear-gradient(135deg, #e31575 0%, #c01060 100%);
+                background: #c01060;
                 color: white;
                 padding: 20px 30px;
                 display: flex;

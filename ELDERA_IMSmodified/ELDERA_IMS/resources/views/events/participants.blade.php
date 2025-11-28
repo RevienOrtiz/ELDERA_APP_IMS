@@ -3,12 +3,13 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         @include('message.popup_message')
         
-        <div class="main">
+        <div class="main {{ $event->event_type }}">
             <!-- Event Banner -->
-            <div class="event-banner">
+            <div class="event-banner {{ $event->event_type }} {{ $event->computed_status }}">
                 <div class="event-banner-content">
-                    <h1 class="event-title">{{ $event->title }}</h1>
-                    <div class="event-details">
+                    <div class="banner-left">
+                        <h1 class="event-title">{{ $event->title }}</h1>
+                        <div class="event-details">
                         <div class="event-detail-item">
                             <i class="fas fa-calendar-alt"></i>
                             <span>{{ $event->event_date->format('F d, Y') }}</span>
@@ -21,29 +22,54 @@
                             <i class="fas fa-map-marker-alt"></i>
                             <span>{{ $event->location }}</span>
                         </div>
+                        </div>
                     </div>
+                    
                 </div>
             </div>
 
             <!-- Participants Management Section -->
             <div class="participants-section">
-                <div class="section-header">
-                    <div class="header-left">
-                        <a href="{{ route('events.show', $event->id) }}" class="back-btn">
-                            <i class="fas fa-arrow-left"></i> Back to Event Details
-                        </a>
-                        <h2 class="section-title">Participants Management</h2>
+                <div class="section-header toolbar">
+                    <div class="toolbar-left">
+                        <div class="toolbar-stats">
+                            <div class="toolbar-stat">
+                                <span class="toolbar-stat-label">Total Registered:</span>
+                                <span class="toolbar-stat-value">{{ $event->current_participants }}</span>
+                            </div>
+                            <div class="toolbar-stat">
+                                <span class="toolbar-stat-label">Attended:</span>
+                                <span class="toolbar-stat-value">{{ $event->participants()->wherePivot('attended', true)->count() }}</span>
+                            </div>
+                            <div class="toolbar-stat">
+                                <span class="toolbar-stat-label">Attendance Rate:</span>
+                                <span class="toolbar-stat-value">{{ $event->current_participants > 0 ? round(($event->participants()->wherePivot('attended', true)->count() / $event->current_participants) * 100, 1) : 0 }}%</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="section-actions">
-                        <button class="btn btn-primary" onclick="openAddParticipantModal()">
-                            <i class="fas fa-plus"></i> Add Participant
-                        </button>
+                    <div class="toolbar-right" style="margin-left:auto;">
+                        <div class="toolbar-search-wrap" role="search">
+                            <i class="fas fa-search search-icon" aria-hidden="true"></i>
+                            <input id="searchInput" type="text" class="toolbar-search-input" placeholder="Search Senior Citizen" aria-label="Search Senior Citizen">
+                            <button type="button" id="searchCloseBtn" class="search-close" aria-label="Clear search">&times;</button>
+                        </div>
                     </div>
                 </div>
+
+                
 
                 <!-- Participants Table -->
                 <div class="table-container">
                     <table class="participants-table">
+                        <colgroup>
+                            <col style="width:6%">
+                            <col style="width:14%">
+                            <col style="width:36%">
+                            <col style="width:8%">
+                            <col style="width:10%">
+                            <col style="width:16%">
+                            <col style="width:10%">
+                        </colgroup>
                         <thead>
                             <tr>
                                 <th>NO.</th>
@@ -53,73 +79,53 @@
                                 <th>GENDER</th>
                                 <th>BARANGAY</th>
                                 <th>ATTENDANCE</th>
-                                <th>ACTIONS</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($event->participants as $index => $participant)
-                                <tr>
+                                <tr 
+                                    data-name="{{ strtolower(($participant->first_name ?? '') . ' ' . ($participant->last_name ?? '')) }}"
+                                    data-osca="{{ strtolower($participant->osca_id ?? '') }}"
+                                    data-age="{{ $participant->age ?? '' }}"
+                                    data-gender="{{ strtolower($participant->sex ?? '') }}"
+                                    data-barangay="{{ strtolower($participant->barangay ?? '') }}"
+                                    data-attended="{{ $participant->pivot->attended ? '1' : '0' }}">
                                     <td>{{ $index + 1 }}</td>
                                     <td>{{ $participant->osca_id ?? 'N/A' }}</td>
-                                    <td>{{ $participant->first_name }} {{ $participant->last_name }}</td>
-                                    <td>{{ $participant->age ?? 'N/A' }}</td>
-                                    <td>{{ $participant->sex ?? 'N/A' }}</td>
-                                    <td>{{ $participant->barangay ?? 'N/A' }}</td>
                                     <td>
-                                        <div class="attendance-radio">
-                                            <label class="radio-option">
-                                                <input type="radio" 
-                                                       name="attendance_{{ $participant->id }}" 
-                                                       value="yes"
-                                                       class="attendance-radio-btn" 
-                                                       data-event-id="{{ $event->id }}" 
+                                        {{ isset($participant->last_name) ? ucfirst($participant->last_name) : 'N/A' }},
+                                        {{ isset($participant->first_name) ? ucfirst($participant->first_name) : '' }}
+                                        {{ isset($participant->middle_name) && $participant->middle_name ? ' ' . ucfirst($participant->middle_name) : '' }}
+                                        {{ isset($participant->name_extension) && $participant->name_extension ? ' ' . ucfirst($participant->name_extension) : '' }}
+                                    </td>
+                                    <td>{{ $participant->age ?? 'N/A' }}</td>
+                                    <td>{{ isset($participant->sex) ? ucfirst($participant->sex) : 'N/A' }}</td>
+                                    <td>{{ isset($participant->barangay) ? implode('-', array_map('ucfirst', explode('-', $participant->barangay))) : 'N/A' }}</td>
+                                    <td>
+                                        <div class="attendance-toggle">
+                                            <span class="toggle-label">No</span>
+                                            <label class="switch">
+                                                <input type="checkbox" 
+                                                       class="attendance-toggle-input"
+                                                       data-event-id="{{ $event->id }}"
                                                        data-senior-id="{{ $participant->id }}"
                                                        {{ $participant->pivot->attended ? 'checked' : '' }}>
-                                                <span class="radio-label yes">Yes</span>
+                                                <span class="slider"></span>
                                             </label>
-                                            <label class="radio-option">
-                                                <input type="radio" 
-                                                       name="attendance_{{ $participant->id }}" 
-                                                       value="no"
-                                                       class="attendance-radio-btn" 
-                                                       data-event-id="{{ $event->id }}" 
-                                                       data-senior-id="{{ $participant->id }}"
-                                                       {{ !$participant->pivot->attended ? 'checked' : '' }}>
-                                                <span class="radio-label no">No</span>
-                                            </label>
+                                            <span class="toggle-label">Yes</span>
                                         </div>
-                                    </td>
-                                    <td>
-                                        <button class="btn btn-danger btn-sm" 
-                                                onclick="removeParticipant({{ $event->id }}, {{ $participant->id }})">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center">No participants registered yet.</td>
+                                    <td colspan="7" class="text-center">No participants registered yet.</td>
                                 </tr>
                             @endforelse
                         </tbody>
-                    </table>
+                        </table>
                 </div>
 
-                <!-- Statistics -->
-                <div class="participants-stats">
-                    <div class="stat-item">
-                        <span class="stat-label">Total Registered:</span>
-                        <span class="stat-value">{{ $event->current_participants }}</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Attended:</span>
-                        <span class="stat-value">{{ $event->participants()->wherePivot('attended', true)->count() }}</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Attendance Rate:</span>
-                        <span class="stat-value">{{ $event->current_participants > 0 ? round(($event->participants()->wherePivot('attended', true)->count() / $event->current_participants) * 100, 1) : 0 }}%</span>
-                    </div>
-                </div>
+                
             </div>
         </div>
 
@@ -157,141 +163,264 @@
         </div>
 
         <style>
+            /* Accent color mapping available across the page */
+            /* General = Green, Pension = Blue, Health = Red, ID Claiming = Yellow */
+            .main.general { --accent-1: #86efac; --accent-2: #22c55e; }
+            .main.pension { --accent-1: #93c5fd; --accent-2: #3b82f6; }
+            .main.health { --accent-1: #fca5a5; --accent-2: #ef4444; }
+            .main.id_claiming { --accent-1: #fde68a; --accent-2: #f59e0b; }
+            .main { --accent-1: #f9a8d4; --accent-2: #e31575; }
+
             .main {
                 margin-left: 250px;
                 margin-top: 60px;
+                height: calc(100vh - 60px);
                 min-height: calc(100vh - 60px);
-                padding: 20px;
-                background: #f8f9fa;
+                padding: 0; /* full-width banner */
+                background: #f3f4f6;
+                overflow: hidden; /* only inner content should scroll */
+                display: flex;
+                flex-direction: column; /* banner + content stack */
             }
 
-            /* Event Banner */
+            /* Event Banner - dynamic colors and sticky header */
+            .event-banner { --accent-1: #f9a8d4; --accent-2: #e31575; }
+            .event-banner.general { --accent-1: #86efac; --accent-2: #22c55e; }
+            .event-banner.pension { --accent-1: #93c5fd; --accent-2: #3b82f6; }
+            .event-banner.health { --accent-1: #fca5a5; --accent-2: #ef4444; }
+            .event-banner.id_claiming { --accent-1: #fde68a; --accent-2: #f59e0b; }
+            .event-banner.done { --accent-1: #d1d5db; --accent-2: #6b7280; opacity: 0.92; }
+
             .event-banner {
-                background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+                background: var(--accent-2);
                 color: white;
-                padding: 40px;
-                border-radius: 12px;
-                margin-bottom: 30px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                padding: 18px 24px; /* slightly larger to match Add Senior */
+                border-radius: 0;
+                margin: 0;
+                box-shadow: none;
+                position: sticky;
+                top: 0;
+                z-index: 3;
+                min-height: 96px;
+                display: flex;
+                align-items: center; /* vertically center content */
+            }
+
+            .event-banner::after {
+                content: "";
+                position: absolute;
+                left: 0; right: 0; bottom: 0;
+                height: 3px; /* slimmer accent underline */
+                background: var(--accent-2);
+                opacity: 0.95;
             }
 
             .event-title {
-                font-size: 28px;
-                font-weight: 700;
-                margin: 0 0 20px 0;
-                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                font-size: 24px; /* match toolbar headline size */
+                font-weight: 800;
+                margin: 0; /* remove extra gap */
+                text-shadow: 0 1px 2px rgba(0,0,0,0.25);
             }
 
             .event-details {
                 display: flex;
-                gap: 30px;
+                gap: 12px; /* tighter spacing */
                 flex-wrap: wrap;
             }
 
             .event-detail-item {
                 display: flex;
                 align-items: center;
-                gap: 10px;
-                font-size: 16px;
-                font-weight: 500;
+                gap: 8px;
+                font-size: 14px; /* compact meta size */
+                font-weight: 600;
             }
 
             .event-detail-item i {
-                font-size: 18px;
+                font-size: 16px;
                 opacity: 0.9;
             }
 
+            .event-banner-content { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+            .banner-left { display: flex; flex-direction: column; gap: 8px; }
+            .banner-stats {
+                display: flex;
+                gap: 24px;
+                margin-top: 10px;
+                align-items: center;
+                color: #ffffff;
+            }
+            .banner-stat { display: flex; align-items: baseline; gap: 8px; }
+            .banner-label { opacity: 0.9; font-weight: 600; }
+            .banner-value { font-weight: 800; }
+
             /* Participants Section */
+            /* Full-width content area: remove card chrome so table touches edges */
             .participants-section {
-                background: white;
-                border-radius: 12px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                background: transparent;
+                border-radius: 0;
+                box-shadow: none;
                 overflow: hidden;
+                flex: 1;              /* fill remaining height under banner */
+                min-height: 0;        /* enable scrolling */
+                overflow-y: hidden;
+                padding: 0;           /* no side padding; table is edge-to-edge */
             }
 
-            .section-header {
-                background: #f8f9fa;
-                padding: 20px 30px;
-                border-bottom: 1px solid #e0e0e0;
+            /* Toolbar (sticky, dark) */
+            .section-header.toolbar {
+                position: sticky;
+                top: 0;
+                z-index: 2;
+                background: #1f2937;
+                padding: 12px 18px;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                border-bottom: 1px solid #111827;
             }
 
-            .header-left {
+            .toolbar-stats { display: flex; align-items: center; gap: 16px; color: #e5e7eb; }
+            .toolbar-stat-label { font-weight: 600; margin-right: 6px; }
+            .toolbar-stat-value { font-weight: 800; color: #fff; }
+
+            .toolbar-left, .toolbar-right, .toolbar-center {
                 display: flex;
                 align-items: center;
-                gap: 20px;
+                gap: 12px;
             }
-
-            .back-btn {
-                color: #e31575;
-                text-decoration: none;
-                padding: 8px 16px;
-                border: 2px solid #e31575;
-                border-radius: 6px;
-                transition: all 0.3s ease;
+            .toolbar-right { flex: 1; justify-content: flex-end; }
+            .toolbar-search-wrap {
+                width: clamp(240px, 40vw, 360px);
                 display: flex;
                 align-items: center;
-                gap: 8px;
-                font-weight: 600;
-                font-size: 14px;
-            }
-
-            .back-btn:hover {
-                background: #e31575;
-                color: white;
-                text-decoration: none;
-            }
-
-            .section-title {
-                margin: 0;
-                color: #333;
-                font-size: 20px;
-                font-weight: 600;
-            }
-
-            .section-actions {
-                display: flex;
                 gap: 10px;
+                background: #d9d9d9;
+                border-radius: 14px;
+                padding: 6px 10px 6px 12px;
+                box-shadow: inset 0 -1px 0 rgba(0,0,0,0.25), inset 0 8px 12px rgba(0,0,0,0.15);
             }
+            .search-icon { color: #111827; font-size: 18px; }
+            .toolbar-search-input {
+                flex: 1;
+                border: none;
+                background: transparent;
+                font-weight: 400;
+                font-size: 16px;
+                color: #111827;
+                outline: none;
+            }
+            .toolbar-search-input::placeholder { color: #111827; opacity: 0.85; font-weight: 400; }
+            .search-close {
+                border: none;
+                background: transparent;
+                color: #111827;
+                font-size: 24px;
+                line-height: 1;
+                cursor: pointer;
+                padding: 0 6px;
+            }
+
+            .filter-sort {
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 16px;
+                background: #ffffff;
+                color: #111827;
+                border-radius: 8px;
+                border: 1px solid #e5e7eb;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+                font-weight: 600;
+                cursor: pointer;
+            }
+
+            .filter-sort i { color: #6b7280; }
+
+            /* Filter & Sort Panel */
+            .hidden { display: none; }
+            .filter-sort-panel {
+                background: #ffffff;
+                border: 1px solid #e5e7eb;
+                border-top: none;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+                padding: 16px 18px;
+                position: sticky;
+                top: 60px; /* below header */
+                z-index: 1;
+            }
+            .panel-grid {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 12px;
+            }
+            .panel-item { display: flex; flex-direction: column; gap: 6px; }
+            .panel-label { font-size: 12px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; }
+            .panel-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
 
             /* Table Styles */
             .table-container {
                 overflow-x: auto;
+                overflow-y: auto;
+                margin: 0;
+                height: calc(100vh - 60px - 96px - 56px);
+                min-height: 0;
             }
 
             .participants-table {
                 width: 100%;
                 border-collapse: collapse;
                 font-size: 14px;
+                table-layout: fixed;
             }
 
             .participants-table th {
-                background: #e31575;
-                color: white;
-                padding: 15px 12px;
+                background: #f5f6f8; /* light gray like reference */
+                color: #1f2937;
+                padding: 14px 12px;
                 text-align: left;
-                font-weight: 600;
+                font-weight: 700;
                 text-transform: uppercase;
                 font-size: 12px;
-                letter-spacing: 0.5px;
+                letter-spacing: 0.6px;
+                border-bottom: 1px solid #e5e7eb;
+                border-right: 1px solid #e5e7eb;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .participants-table thead th {
+                position: sticky;
+                top: 0;
+                z-index: 2;
             }
 
             .participants-table th:nth-child(7) {
                 text-align: center;
                 width: 120px;
             }
+            /* Actions column: compact width */
 
             .participants-table td {
                 padding: 15px 12px;
                 border-bottom: 1px solid #e0e0e0;
                 vertical-align: middle;
                 text-align: center;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
 
             .participants-table td:not(:nth-child(7)) {
                 text-align: left;
+            }
+
+            /* Ensure displayed text starts with a capital letter for key columns */
+            .participants-table td:nth-child(3), /* Full Name */
+            .participants-table td:nth-child(5), /* Gender */
+            .participants-table td:nth-child(6)  /* Barangay */ {
+                text-transform: capitalize;
             }
 
             /* Specific styling for attendance column */
@@ -310,66 +439,62 @@
                 background-color: #fafafa;
             }
 
-            /* Attendance Radio Buttons */
-            .attendance-radio {
+            /* Compact actions cell */
+
+            /* Make delete button smaller inside table */
+
+            /* Attendance Toggle Switch */
+            .attendance-toggle {
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                gap: 10px;
+                gap: 8px;
                 height: 40px;
             }
 
-            .radio-option {
-                display: flex;
-                align-items: center;
-                cursor: pointer;
-                padding: 4px 8px;
-                border-radius: 4px;
-                transition: all 0.3s ease;
-                border: 1px solid transparent;
+            .toggle-label {
+                font-size: 12px;
+                color: #374151;
+                font-weight: 600;
+            }
+
+            .switch {
+                position: relative;
+                display: inline-block;
+                width: 54px;
                 height: 28px;
             }
 
-            .radio-option:hover {
-                background-color: #f8f9fa;
-            }
+            .switch input { display: none; }
 
-            .radio-option input[type="radio"] {
-                margin: 0 4px 0 0;
-                width: 12px;
-                height: 12px;
+            .slider {
+                position: absolute;
                 cursor: pointer;
+                top: 0; left: 0; right: 0; bottom: 0;
+                background-color: #e5e7eb;
+                transition: 0.2s ease;
+                border-radius: 999px;
+                box-shadow: inset 0 0 0 1px #d1d5db;
             }
 
-            .radio-label {
-                font-weight: 500;
-                font-size: 12px;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                white-space: nowrap;
+            .slider:before {
+                position: absolute;
+                content: "";
+                height: 22px; width: 22px;
+                left: 3px; top: 3px;
+                background-color: #ffffff;
+                transition: 0.2s ease;
+                border-radius: 999px;
+                box-shadow: 0 1px 3px rgba(17, 24, 39, 0.2);
             }
 
-            .radio-label.yes {
-                color: #28a745;
+            .attendance-toggle-input:checked + .slider {
+                background-color: #22c55e; /* green when ON */
+                box-shadow: inset 0 0 0 1px #16a34a;
             }
 
-            .radio-label.no {
-                color: #dc3545;
-            }
-
-            .radio-option input[type="radio"]:checked + .radio-label.yes {
-                color: #28a745;
-                font-weight: 700;
-            }
-
-            .radio-option input[type="radio"]:checked + .radio-label.no {
-                color: #dc3545;
-                font-weight: 700;
-            }
-
-            .radio-option:has(input[type="radio"]:checked) {
-                background-color: rgba(227, 21, 117, 0.1);
-                border-color: #e31575;
+            .attendance-toggle-input:checked + .slider:before {
+                transform: translateX(26px);
             }
 
             /* Statistics */
@@ -417,7 +542,7 @@
             }
 
             .btn-primary {
-                background: #e31575;
+                background: var(--accent-2);
                 color: white;
             }
 
@@ -535,7 +660,7 @@
             @media (max-width: 768px) {
                 .main {
                     margin-left: 0;
-                    padding: 10px;
+                    padding: 0;
                 }
                 
                 .event-details {
@@ -575,49 +700,69 @@
         </style>
 
         <script>
-            // Attendance radio button functionality
-            document.addEventListener('DOMContentLoaded', function() {
-                const attendanceRadios = document.querySelectorAll('.attendance-radio-btn');
+            // Search-only logic (filter & sort removed)
+            document.addEventListener('DOMContentLoaded', () => {
+                const searchInput = document.getElementById('searchInput');
+                const searchCloseBtn = document.getElementById('searchCloseBtn');
                 
-                attendanceRadios.forEach(radio => {
-                    radio.addEventListener('change', function() {
+                // Apply search filter as the user types
+                searchInput.addEventListener('input', filterBySearch);
+
+                if (searchCloseBtn) {
+                    searchCloseBtn.addEventListener('click', () => {
+                        searchInput.value = '';
+                        filterBySearch();
+                        searchInput.blur();
+                    });
+                }
+
+                // Initial apply to ensure current state is reflected
+                filterBySearch();
+            });
+
+            function getParticipantRows() {
+                return Array.from(document.querySelectorAll('.participants-table tbody tr'));
+            }
+
+            function filterBySearch() {
+                const search = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+                const rows = getParticipantRows();
+                rows.forEach(row => {
+                    const matchesSearch = !search || row.dataset.name.includes(search) || (row.dataset.osca || '').includes(search);
+                    row.style.display = matchesSearch ? '' : 'none';
+                });
+            }
+            // Attendance toggle functionality
+            document.addEventListener('DOMContentLoaded', function() {
+                const toggles = document.querySelectorAll('.attendance-toggle-input');
+
+                toggles.forEach(toggle => {
+                    toggle.addEventListener('change', function() {
                         const eventId = this.dataset.eventId;
                         const seniorId = this.dataset.seniorId;
-                        const attended = this.value === 'yes';
-                        
-                        // Show loading state
+                        const attended = this.checked;
+
                         this.disabled = true;
-                        
+
                         fetch(`/Events/${eventId}/participants/${seniorId}/attendance`, {
                             method: 'PUT',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                             },
-                            body: JSON.stringify({
-                                attended: attended
-                            })
+                            body: JSON.stringify({ attended })
                         })
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                // Update statistics
                                 updateStatistics();
                             } else {
-                                // Revert radio state
-                                const otherRadio = document.querySelector(`input[name="attendance_${seniorId}"][value="${attended ? 'no' : 'yes'}"]`);
-                                if (otherRadio) {
-                                    otherRadio.checked = true;
-                                }
-                                alert('Error updating attendance: ' + data.message);
+                                this.checked = !attended; // revert
+                                alert('Error updating attendance: ' + (data.message || 'Unknown error'));
                             }
                         })
                         .catch(error => {
-                            // Revert radio state
-                            const otherRadio = document.querySelector(`input[name="attendance_${seniorId}"][value="${attended ? 'no' : 'yes'}"]`);
-                            if (otherRadio) {
-                                otherRadio.checked = true;
-                            }
+                            this.checked = !attended;
                             alert('Error updating attendance. Please try again.');
                             console.error('Error:', error);
                         })

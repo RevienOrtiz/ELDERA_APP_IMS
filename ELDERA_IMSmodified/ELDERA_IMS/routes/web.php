@@ -91,7 +91,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/Seniors', [SeniorController::class, 'index'])->name('seniors');
     Route::get('/Seniors/pension-report', [SeniorController::class, 'generatePensionReport'])->name('seniors.pension.report');
-    // ONCBP/Benefits Applicants Report
     Route::get('/Seniors/oncbp-report', [SeniorController::class, 'generateOncbpReport'])->name('seniors.oncbp.report');
     
     // App Account Creation
@@ -106,6 +105,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/Seniors/benefits', [SeniorController::class, 'benefits'])->name('seniors.benefits');
     Route::get('/Seniors/pension', [SeniorController::class, 'pension'])->name('seniors.pension');
     Route::get('/Seniors/id-applications', [SeniorController::class, 'idApplications'])->name('seniors.id-applications');
+    
+    // Senior ID Card (Lingayen)
+Route::get('/Seniors/{id}/id-card/lingayen/html', [SeniorController::class, 'printLingayenIdCardHtml'])->name('seniors.id-card.lingayen.html');
 
     //Forms
     Route::get('/Form_existing_senior', function () {

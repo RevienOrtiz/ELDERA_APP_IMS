@@ -871,7 +871,7 @@
                                     <tr style="transition: background-color 0.2s ease;">
                                         <td style="padding: 12px 8px; text-align: center; vertical-align: middle; color: #555; font-size: 13px; font-weight: 600;">{{ $loop->iteration }}</td>
                                         <td style="padding: 12px 12px; vertical-align: middle;">
-                                            <a href="{{ route('events.show', $event->id) }}" style="color: {{ $eventColor }}; text-decoration: none; font-weight: 600; font-size: 14px; transition: color 0.2s ease; display: inline-block;">{{ $event->title }}</a>
+                                            <a href="{{ route('events.show', $event->id) }}" style="color: {{ $eventColor }}; text-decoration: none; font-weight: 600; font-size: 14px; transition: color 0.2s ease; display: inline-block;">{{ ucfirst($event->title) }}</a>
                                         </td>
                                         <td style="padding: 12px 8px; text-align: center; vertical-align: middle; color: #555; font-size: 13px; font-weight: 500;">
                                             {{ $event->event_date->format('d/m/y') }}
@@ -880,7 +880,7 @@
                                             {{ $event->start_time->format('g:i A') }}
                                         </td>
                                         <td style="padding: 12px 12px; vertical-align: middle; color: #666; font-size: 13px;">
-                                            {{ $event->location }}
+                                            {{ ucfirst($event->location) }}
                                         </td>
                                     </tr>
                                     @empty

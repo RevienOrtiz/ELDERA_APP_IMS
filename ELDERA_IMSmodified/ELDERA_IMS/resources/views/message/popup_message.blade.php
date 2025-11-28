@@ -454,36 +454,26 @@
             
             document.getElementById('successMessage').innerText = successMessage;
             successModal.show();
-            
-            // Ensure proper modal dismissal
+
+            function cleanupModals() {
+                document.querySelectorAll('.modal-backdrop').forEach(function(b){ b.remove(); });
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            }
+
+            document.getElementById('successModal').addEventListener('hidden.bs.modal', function(){
+                cleanupModals();
+            });
+
             continueBtn.addEventListener('click', function() {
                 successModal.hide();
-                // Force remove backdrop if it persists
-                setTimeout(function() {
-                    var backdrop = document.querySelector('.modal-backdrop');
-                    if (backdrop) {
-                        backdrop.remove();
-                    }
-                    document.body.classList.remove('modal-open');
-                    document.body.style.overflow = '';
-                    document.body.style.paddingRight = '';
-                }, 300);
+                setTimeout(cleanupModals, 300);
             });
-            
-            // Auto-hide modal after 5 seconds as fallback
+
             setTimeout(function() {
-                if (successModal._isShown) {
-                    successModal.hide();
-                    setTimeout(function() {
-                        var backdrop = document.querySelector('.modal-backdrop');
-                        if (backdrop) {
-                            backdrop.remove();
-                        }
-                        document.body.classList.remove('modal-open');
-                        document.body.style.overflow = '';
-                        document.body.style.paddingRight = '';
-                    }, 300);
-                }
+                successModal.hide();
+                setTimeout(cleanupModals, 300);
             }, 5000);
         });
     @endif
@@ -661,4 +651,58 @@
             modalElement.style.display = 'none';
         }
     }
+
+    // Public function: show success modal programmatically
+    window.showSuccessModal = function(message = 'Success', theme = 'added') {
+        try {
+            var successModal = new bootstrap.Modal(document.getElementById('successModal'), {
+                backdrop: 'static',
+                keyboard: false
+            });
+            var successCard = document.getElementById('successCard');
+            var successIcon = document.getElementById('successIcon');
+            var successTitle = document.getElementById('successTitle');
+            var continueBtn = document.getElementById('continueBtn');
+
+            successCard.className = 'modal-content success-card text-center p-4';
+            successIcon.className = 'success-icon-circle d-inline-flex align-items-center justify-content-center';
+            successTitle.className = 'success-message-bold mb-3';
+            continueBtn.className = 'continue-button w-100';
+
+            if (theme === 'deleted') {
+                successCard.classList.add('success-deleted');
+                successIcon.classList.add('success-deleted-icon');
+                successTitle.classList.add('success-deleted-text');
+                continueBtn.classList.add('success-deleted-btn');
+                successTitle.innerText = 'SUCCESSFULLY DELETED!';
+            } else if (theme === 'updated') {
+                successCard.classList.add('success-updated');
+                successIcon.classList.add('success-updated-icon');
+                successTitle.classList.add('success-updated-text');
+                continueBtn.classList.add('success-updated-btn');
+                successTitle.innerText = 'SUCCESSFULLY UPDATED!';
+            } else {
+                successCard.classList.add('success-added');
+                successIcon.classList.add('success-added-icon');
+                successTitle.classList.add('success-added-text');
+                continueBtn.classList.add('success-added-btn');
+                successTitle.innerText = 'SUCCESSFULLY ADDED!';
+            }
+
+            document.getElementById('successMessage').innerText = message || 'Success';
+            successModal.show();
+
+            function cleanupModals() {
+                document.querySelectorAll('.modal-backdrop').forEach(function(b){ b.remove(); });
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            }
+
+            var modalEl = document.getElementById('successModal');
+            modalEl.addEventListener('hidden.bs.modal', function(){ cleanupModals(); }, { once: true });
+            continueBtn.addEventListener('click', function() { successModal.hide(); cleanupModals(); }, { once: true });
+            setTimeout(function(){ successModal.hide(); cleanupModals(); }, 5000);
+        } catch (e) { }
+    };
 </script>

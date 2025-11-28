@@ -297,10 +297,6 @@
                 <i class="fas fa-key"></i>
                 Password Reset Request #{{ $passwordResetRequest->id }}
             </h1>
-            <a href="{{ route('admin.password-reset-requests.index') }}" class="back-link">
-                <i class="fas fa-arrow-left"></i>
-                Back to Password Reset Requests
-            </a>
         </div>
 
         <!-- Success/Error Messages -->

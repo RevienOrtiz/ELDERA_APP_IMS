@@ -14,15 +14,15 @@
                           </div>
                         
                           <div class="button-group">
-                              <a href="{{ route('seniors') }}" class="action-btn back-btn">
-                                  <i class="fas fa-arrow-left"></i> Back to Seniors
-                              </a>
                               <a href="{{ route('edit_senior', ['id' => $senior->id]) }}" class="action-btn edit-btn">
                                 <i class="fas fa-edit"></i> Edit
                               </a>
                               <button onclick="generatePDF()" class="action-btn pdf-btn">
                                   <i class="fas fa-file-pdf"></i> Generate PDF
                               </button>
+                              <a href="{{ route('seniors.id-card.lingayen.html', ['id' => $senior->id]) }}" class="action-btn print-btn" target="_blank">
+                                  <i class="fas fa-id-card"></i> HTML Template ID
+                              </a>
 
                           </div>
                       </div>

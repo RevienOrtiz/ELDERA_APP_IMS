@@ -314,6 +314,42 @@ class SeniorController extends Controller
         return view('seniors.edit_comprehensive_profile', compact('senior', 'barangays'));
     }
 
+    
+
+    /**
+     * Render Lingayen-style Senior ID using pure HTML/CSS (no background image).
+     */
+    public function printLingayenIdCardHtml(string $id)
+    {
+        $senior = Senior::findOrFail($id);
+        $photoUrl = null;
+        if (!empty($senior->photo_path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($senior->photo_path)) {
+            $photoUrl = asset('storage/' . $senior->photo_path);
+        } else {
+            $photoUrl = asset('images/default-profile.png');
+        }
+
+        $frontHtml = ViewFacade::make('reports.senior_id_card_lingayen_html', [
+            'senior' => $senior,
+            'side' => 'front',
+            'preview' => false,
+            'photoUrl' => $photoUrl,
+        ])->render();
+
+        $backHtml = ViewFacade::make('reports.senior_id_card_lingayen_html', [
+            'senior' => $senior,
+            'side' => 'back',
+            'preview' => false,
+            'photoUrl' => $photoUrl,
+        ])->render();
+
+        return response()->view('reports.senior_id_card_wrapper', [
+            'frontHtml' => $frontHtml,
+            'backHtml' => $backHtml,
+            'title' => 'Senior ID Card — Lingayen (HTML)',
+        ]);
+    }
+
     /**
      * Update the specified senior in storage.
      */
