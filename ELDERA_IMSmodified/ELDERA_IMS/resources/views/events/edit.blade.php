@@ -4,12 +4,25 @@
         <div class="main">
             <div class="form-container">
                 <div class="form-header">
-                    <h2 class="form-title">Edit Event: {{ $event->title }}</h2>
-                    <a href="{{ route('events.show', $event->id) }}" class="back-btn">
-                        <i class="fas fa-arrow-left"></i> Back to Event Details
-                    </a>
+                    <h2 class="form-title">Edit Event</h2>
+                    <div class="form-subtitle">{{ $event->title }}</div>
                 </div>
 
+                @php
+                    $selection = is_array($event->recipient_selection) ? $event->recipient_selection : json_decode($event->recipient_selection ?? '[]', true);
+                    $selectedTypes = isset($selection['types']) && is_array($selection['types']) ? $selection['types'] : [];
+                    $selectedBarangays = isset($selection['barangays']) && is_array($selection['barangays']) ? $selection['barangays'] : [];
+                    $selectedCategories = isset($selection['categories']) && is_array($selection['categories']) ? $selection['categories'] : [];
+                    if (empty($selectedTypes)) {
+                        if ($event->event_type === 'id_claiming') {
+                            $selectedTypes = ['category'];
+                            $selectedCategories = ['id_applicants'];
+                        } elseif ($event->event_type === 'pension') {
+                            $selectedTypes = ['category'];
+                            $selectedCategories = ['pension'];
+                        }
+                    }
+                @endphp
                 <form method="POST" action="{{ route('events.update', $event->id) }}" class="event-form">
                     @csrf
                     @method('PUT')
@@ -126,14 +139,88 @@
                     </div>
 
                     <div class="form-section">
+                        <h3 class="section-title">Target Recipients Selection</h3>
+                        <div class="d-flex flex-column gap-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input type="checkbox" id="recipients_all" name="recipientTypes[]" value="all" class="form-check-input" {{ in_array('all', $selectedTypes) ? 'checked' : '' }}>
+                                        <label for="recipients_all" class="form-check-label">All Senior Citizens</label>
+                                    </div>
+                                    <p class="text-muted small mb-0 ms-4">Send notification to every registered senior citizen</p>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input type="checkbox" id="recipients_barangay" name="recipientTypes[]" value="barangay" class="form-check-input" {{ in_array('barangay', $selectedTypes) ? 'checked' : '' }}>
+                                        <label for="recipients_barangay" class="form-check-label">Filter by Barangay</label>
+                                    </div>
+                                    <p class="text-muted small mb-3 ms-4">Send notification to seniors in selected barangay(s)</p>
+                                    <div id="barangaySelection" class="ms-4" style="display: {{ in_array('barangay', $selectedTypes) ? 'block' : 'none' }};">
+                                        <h6 class="mb-3">Select Barangays</h6>
+                                        <div class="row g-2">
+                                            <div class="col-12 mb-2">
+                                                <div class="form-check">
+                                                    <input type="checkbox" id="barangay_all" name="selectedBarangays[]" value="all" class="form-check-input" {{ in_array('all', $selectedBarangays) ? 'checked' : '' }}>
+                                                    <label for="barangay_all" class="form-check-label">All Barangays</label>
+                                                </div>
+                                            </div>
+                                            @foreach([
+                                                'aliwekwek', 'baay', 'balangobong', 'balococ', 'bantayan', 'basing', 'capandanan',
+                                                'domalandan-center', 'domalandan-east', 'domalandan-west', 'dorongan', 'dulag',
+                                                'estanza', 'lasip', 'libsong-east', 'libsong-west', 'malawa', 'malimpuec',
+                                                'maniboc', 'matalava', 'naguelguel', 'namolan', 'pangapisan-north', 'pangapisan-sur',
+                                                'poblacion', 'quibaol', 'rosario', 'sabangan', 'talogtog', 'tonton', 'tumbar', 'wawa'
+                                            ] as $barangay)
+                                                <div class="col-md-4 col-sm-6">
+                                                    <div class="form-check">
+                                                        <input type="checkbox" id="barangay_{{ $barangay }}" name="selectedBarangays[]" value="{{ $barangay }}" class="form-check-input" {{ in_array($barangay, $selectedBarangays) ? 'checked' : '' }}>
+                                                        <label for="barangay_{{ $barangay }}" class="form-check-label">{{ ucwords(str_replace('-', ' ', $barangay)) }}</label>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input type="checkbox" id="recipients_category" name="recipientTypes[]" value="category" class="form-check-input" {{ in_array('category', $selectedTypes) ? 'checked' : '' }}>
+                                        <label for="recipients_category" class="form-check-label">Filter by Category</label>
+                                    </div>
+                                    <p class="text-muted small mb-3 ms-4">Auto-select seniors based on system records</p>
+                                    <div id="categorySelection" class="ms-4" style="display: {{ in_array('category', $selectedTypes) ? 'block' : 'none' }};">
+                                        <h6 class="mb-3">Select Categories</h6>
+                                        <div class="d-flex flex-column gap-2">
+                                            <div class="form-check">
+                                                <input type="checkbox" id="category_pension" name="selectedCategories[]" value="pension" class="form-check-input" {{ in_array('pension', $selectedCategories) ? 'checked' : '' }}>
+                                                <label for="category_pension" class="form-check-label"><strong>Pension Recipients</strong><br><small class="text-muted">Seniors listed in the pension table</small></label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input type="checkbox" id="category_id" name="selectedCategories[]" value="id_applicants" class="form-check-input" {{ in_array('id_applicants', $selectedCategories) ? 'checked' : '' }}>
+                                                <label for="category_id" class="form-check-label"><strong>ID Applicants</strong><br><small class="text-muted">Seniors from the ID application table</small></label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input type="checkbox" id="category_benefits" name="selectedCategories[]" value="benefit_applicants" class="form-check-input" {{ in_array('benefit_applicants', $selectedCategories) ? 'checked' : '' }}>
+                                                <label for="category_benefits" class="form-check-label"><strong>Benefit Applicants</strong><br><small class="text-muted">Seniors from the benefits table</small></label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
                         <h3 class="section-title">Participants & Requirements</h3>
                         
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="max_participants" class="form-label">Maximum Participants</label>
-                                <input type="number" id="max_participants" name="max_participants" class="form-control" 
-                                       value="{{ old('max_participants', $event->max_participants) }}" min="1">
-                                <small class="form-text">Leave empty for unlimited participants</small>
+                                <!-- Max participants option removed -->
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Current Participants</label>
@@ -181,30 +268,43 @@
                 margin-left: 250px;
                 margin-top: 60px;
                 min-height: calc(100vh - 60px);
-                padding: 20px;
+                padding: 24px;
                 background: #f8f9fa;
+                display: flex;
+                align-items: flex-start;
+                justify-content: center;
             }
 
             .form-container {
                 background: white;
-                border-radius: 8px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
                 overflow: hidden;
+                width: 100%;
+                max-width: 700px;
             }
 
             .form-header {
-                background: linear-gradient(135deg, #e31575 0%, #c01060 100%);
+                background: #e31575;
                 color: white;
-                padding: 30px;
+                padding: 20px;
                 display: flex;
-                justify-content: space-between;
-                align-items: center;
+                flex-direction: column;
+                gap: 6px;
+                border-bottom: 1px solid #e0e0e0;
             }
 
             .form-title {
                 margin: 0;
-                font-size: 24px;
-                font-weight: 700;
+                font-size: 20px;
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .form-subtitle {
+                font-size: 14px;
+                opacity: 0.9;
             }
 
             .back-btn {
@@ -227,7 +327,7 @@
             }
 
             .event-form {
-                padding: 30px;
+                padding: 20px;
             }
 
             .form-section {
@@ -242,11 +342,9 @@
 
             .section-title {
                 color: #e31575;
-                font-size: 18px;
-                font-weight: 600;
-                margin-bottom: 20px;
-                padding-bottom: 10px;
-                border-bottom: 2px solid #f0f0f0;
+                font-size: 16px;
+                font-weight: 700;
+                margin-bottom: 16px;
             }
 
             .form-row {
@@ -268,16 +366,16 @@
             .form-label {
                 font-weight: 600;
                 color: #333;
-                margin-bottom: 8px;
-                font-size: 14px;
+                margin-bottom: 6px;
+                font-size: 13px;
             }
 
             .form-control {
-                padding: 12px 16px;
+                padding: 10px 14px;
                 border: 2px solid #e0e0e0;
-                border-radius: 6px;
+                border-radius: 8px;
                 font-size: 14px;
-                transition: all 0.3s ease;
+                transition: all 0.2s ease;
                 background: white;
             }
 
@@ -313,9 +411,9 @@
             .form-actions {
                 display: flex;
                 justify-content: flex-end;
-                gap: 15px;
-                margin-top: 30px;
-                padding-top: 20px;
+                gap: 12px;
+                margin-top: 10px;
+                padding-top: 16px;
                 border-top: 1px solid #e0e0e0;
             }
 
@@ -344,22 +442,27 @@
             .btn-primary {
                 background: #e31575;
                 color: white;
+                border: 2px solid #e31575;
+                border-radius: 25px;
+                padding: 10px 20px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
             }
 
             .btn-primary:hover {
                 background: #c41e3a;
             }
+            .card { border: 1px solid #eee; border-radius: 10px; }
+            .card-body { padding: 16px; }
 
             @media (max-width: 768px) {
                 .main {
                     margin-left: 0;
-                    padding: 10px;
+                    padding: 16px;
                 }
                 
                 .form-header {
-                    flex-direction: column;
-                    gap: 20px;
-                    text-align: center;
+                    text-align: left;
                 }
                 
                 .form-row {
@@ -371,5 +474,36 @@
                 }
             }
         </style>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const recipientCheckboxes = document.querySelectorAll('input[name="recipientTypes[]"]');
+                const barangaySelection = document.getElementById('barangaySelection');
+                const categorySelection = document.getElementById('categorySelection');
+                const allSeniorsCheckbox = document.getElementById('recipients_all');
+                const barangayCheckbox = document.getElementById('recipients_barangay');
+                const categoryCheckbox = document.getElementById('recipients_category');
+
+                recipientCheckboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', function() {
+                        if (this.value === 'barangay') {
+                            barangaySelection.style.display = this.checked ? 'block' : 'none';
+                        } else if (this.value === 'category') {
+                            categorySelection.style.display = this.checked ? 'block' : 'none';
+                        }
+
+                        if (this.value === 'all' && this.checked) {
+                            barangayCheckbox.checked = false;
+                            categoryCheckbox.checked = false;
+                            barangaySelection.style.display = 'none';
+                            categorySelection.style.display = 'none';
+                        }
+
+                        if ((this.value === 'barangay' || this.value === 'category') && this.checked) {
+                            allSeniorsCheckbox.checked = false;
+                        }
+                    });
+                });
+            });
+        </script>
     </x-header>
 </x-sidebar>

@@ -30,7 +30,8 @@ class Event extends Model
         'max_participants',
         'current_participants',
         'requirements',
-        'created_by'
+        'created_by',
+        'recipient_selection'
     ];
 
     protected $casts = [
@@ -39,6 +40,7 @@ class Event extends Model
         'end_time' => 'datetime',
         'max_participants' => 'integer',
         'current_participants' => 'integer',
+        'recipient_selection' => 'array',
     ];
 
     // Relationships
@@ -110,6 +112,29 @@ class Event extends Model
             'ongoing' => 'Ongoing',
             'completed' => 'Completed',
             'cancelled' => 'Cancelled',
+            default => 'Unknown'
+        };
+    }
+
+    public function getComputedStatusAttribute(): string
+    {
+        $today = now()->toDateString();
+        $eventDate = $this->event_date ? $this->event_date->toDateString() : $today;
+        if ($today < $eventDate) {
+            return 'upcoming';
+        }
+        if ($today === $eventDate) {
+            return 'ongoing';
+        }
+        return 'done';
+    }
+
+    public function getComputedStatusTextAttribute(): string
+    {
+        return match($this->computed_status) {
+            'upcoming' => 'Upcoming',
+            'ongoing' => 'Ongoing',
+            'done' => 'Done',
             default => 'Unknown'
         };
     }
@@ -212,4 +237,3 @@ class Event extends Model
         return ($attendedCount / $this->current_participants) * 100;
     }
 }
-

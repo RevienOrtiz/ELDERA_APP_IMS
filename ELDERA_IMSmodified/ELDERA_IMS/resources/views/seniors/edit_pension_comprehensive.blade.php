@@ -357,7 +357,6 @@
                                         <div class="text-center mt-3">
                                             <div class="d-flex gap-3 justify-content-center">
                                                 <button type="button" class="btn btn-primary px-4 py-2 fw-bold" onclick="confirmUpdate()">SAVE CHANGES</button>
-                                                <a href="{{ route('seniors') }}" class="btn btn-secondary">BACK</a>
                                             </div>
                                         </div>
                                     </form>

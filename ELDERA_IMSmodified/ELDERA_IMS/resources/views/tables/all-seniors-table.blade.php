@@ -34,12 +34,12 @@
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $senior->osca_id }}</td>
                     <td>
-                        {{ $senior->last_name }}, {{ $senior->first_name }}
-                        {{ $senior->middle_name ? ' ' . $senior->middle_name : '' }}
-                        {{ $senior->name_extension ? ' ' . $senior->name_extension : '' }}
+                        {{ ucfirst($senior->last_name) }}, {{ ucfirst($senior->first_name) }}
+                        {{ $senior->middle_name ? ' ' . ucfirst($senior->middle_name) : '' }}
+                        {{ $senior->name_extension ? ' ' . ucfirst($senior->name_extension) : '' }}
                     </td>
                     <td>{{ \Carbon\Carbon::parse($senior->date_of_birth)->age }}</td>
-                    <td>{{ $senior->sex }}</td>
+                    <td>{{ ucfirst($senior->sex) }}</td>
                     <td>{{ implode('-', array_map('ucfirst', explode('-', $senior->barangay))) }}</td>
                     <td>
                         <span class="status-badge status-{{ $senior->status }}">

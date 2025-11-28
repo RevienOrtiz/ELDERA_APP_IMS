@@ -369,7 +369,43 @@
                             <tr>
                                 <td>#{{ $request->id }}</td>
                                 <td><strong>{{ $request->osca_id }}</strong></td>
-                                <td>{{ $request->full_name }}</td>
+                                <td>
+                                    @php
+                                        $ln = $request->last_name ?? null;
+                                        $fn = $request->first_name ?? null;
+                                        $mn = $request->middle_name ?? null;
+                                        $ext = $request->name_extension ?? null;
+
+                                        // Fallback: derive parts from full_name when individual fields are absent
+                                        $derived = null;
+                                        if ((!$ln || !$fn) && !empty($request->full_name)) {
+                                            $full = trim($request->full_name);
+                                            $parts = array_values(array_filter(preg_split('/\s+/', $full)));
+                                            $nameExt = '';
+                                            $knownExt = ['jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv', 'v'];
+                                            if (count($parts) > 2) {
+                                                $lastToken = strtolower(end($parts));
+                                                if (in_array($lastToken, $knownExt, true)) {
+                                                    // Normalize extension casing
+                                                    $map = ['jr' => 'Jr.', 'jr.' => 'Jr.', 'sr' => 'Sr.', 'sr.' => 'Sr.', 'ii' => 'II', 'iii' => 'III', 'iv' => 'IV', 'v' => 'V'];
+                                                    $nameExt = $map[$lastToken];
+                                                    array_pop($parts);
+                                                }
+                                            }
+                                            if (count($parts) >= 2) {
+                                                $first = array_shift($parts);
+                                                $last = array_pop($parts);
+                                                $middle = count($parts) ? implode(' ', $parts) : '';
+                                                $derived = trim(ucfirst($last) . ', ' . ucfirst($first) . ($middle ? ' ' . ucwords($middle) : '') . ($nameExt ? ' ' . $nameExt : ''));
+                                            }
+                                        }
+                                    @endphp
+                                    @if($ln && $fn)
+                                        {{ ucfirst($ln) }}, {{ ucfirst($fn) }}{{ $mn ? ' ' . ucfirst($mn) : '' }}{{ $ext ? ' ' . ucfirst($ext) : '' }}
+                                    @else
+                                        {{ $derived ?? ucwords($request->full_name) }}
+                                    @endif
+                                </td>
                                 <td>
                                     <span class="status-badge status-{{ $request->status }}">
                                         {{ ucfirst($request->status) }}

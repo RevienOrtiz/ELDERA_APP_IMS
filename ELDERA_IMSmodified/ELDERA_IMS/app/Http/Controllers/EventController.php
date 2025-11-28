@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Models\Senior;
+use App\Models\Application;
+use App\Models\BenefitsApplication;
+use App\Models\PensionApplication;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
@@ -37,7 +40,7 @@ class EventController extends Controller
     /**
      * Store a newly created event in storage.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): JsonResponse|RedirectResponse
     {
         try {
             $validatedData = $request->validate([
@@ -51,25 +54,90 @@ class EventController extends Controller
                 'organizer' => 'required|string|max:255',
                 'contact_person' => 'required|string|max:255',
                 'contact_number' => 'required|string|max:20',
-                'max_participants' => 'nullable|integer|min:1',
                 'requirements' => 'nullable|string',
+                // Recipient selection (JSON from UI)
+                'recipient_selection' => 'nullable|string',
             ]);
+
+            try {
+                $eventDate = \Carbon\Carbon::parse($validatedData['event_date']);
+                if (!empty($validatedData['start_time'])) {
+                    $validatedData['start_time'] = \Carbon\Carbon::parse($eventDate->format('Y-m-d') . ' ' . $validatedData['start_time'])->toDateTimeString();
+                }
+                if (!empty($validatedData['end_time'])) {
+                    $validatedData['end_time'] = \Carbon\Carbon::parse($eventDate->format('Y-m-d') . ' ' . $validatedData['end_time'])->toDateTimeString();
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('Event time normalization failed', ['error' => $e->getMessage()]);
+            }
 
             $validatedData['status'] = 'upcoming';
             $validatedData['current_participants'] = 0;
-            $validatedData['created_by'] = Auth::id();
+            // Ensure created_by is set; fallback to user ID 1 if not authenticated
+            $validatedData['created_by'] = Auth::id() ?? 1;
 
-            Event::create($validatedData);
+            $event = Event::create($validatedData);
 
-            return redirect()->route('events')
-                ->with('success', 'Event created successfully!');
+            // Auto-register participants based on recipient selection from UI
+            $recipientSelectionRaw = $validatedData['recipient_selection'] ?? null;
+            $recipientSelection = null;
+            if ($recipientSelectionRaw) {
+                try {
+                    $recipientSelection = json_decode($recipientSelectionRaw, true, 512, JSON_THROW_ON_ERROR);
+                } catch (\Throwable $e) {
+                    \Log::warning('Invalid recipient_selection JSON on event store', ['error' => $e->getMessage()]);
+                }
+            }
+
+            if (is_array($recipientSelection)) {
+                $seniorIds = $this->resolveRecipientSeniorIds($recipientSelection);
+
+                if (!empty($seniorIds)) {
+                    $attachData = [];
+                    $now = now();
+                    foreach ($seniorIds as $sid) {
+                        $attachData[$sid] = [
+                            'registered_at' => $now,
+                            'attended' => false,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+                    }
+                    // Avoid duplicates if any
+                    $event->participants()->syncWithoutDetaching($attachData);
+                    $event->update(['current_participants' => $event->participants()->count()]);
+                }
+            }
+            // If request is AJAX/JSON, return payload with event id for client redirect
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'event_id' => $event->id,
+                ]);
+            }
+
+            // Redirect to Manage Participants to monitor attendance
+            return redirect()->route('events.participants', $event->id)
+                ->with('success', 'Event created successfully and participants auto-registered.');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $e->errors(),
+                ], 422);
+            }
             return redirect()->back()
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
             Log::error('Error creating event: ' . $e->getMessage());
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An error occurred while creating the event. Please try again.'
+                ], 500);
+            }
             return redirect()->back()
                 ->with('error', 'An error occurred while creating the event. Please try again.');
         }
@@ -115,12 +183,65 @@ class EventController extends Controller
                 'organizer' => 'nullable|string|max:255',
                 'contact_person' => 'nullable|string|max:255',
                 'contact_number' => 'nullable|string|max:20',
-                'max_participants' => 'nullable|integer|min:1',
                 'requirements' => 'nullable|string',
                 'status' => 'required|string|in:upcoming,ongoing,completed,cancelled',
+                'recipient_selection' => 'nullable|string',
             ]);
 
+            try {
+                $eventDate = \Carbon\Carbon::parse($validatedData['event_date']);
+                if (!empty($validatedData['start_time'])) {
+                    $validatedData['start_time'] = \Carbon\Carbon::parse($eventDate->format('Y-m-d') . ' ' . $validatedData['start_time'])->toDateTimeString();
+                }
+                if (!empty($validatedData['end_time'])) {
+                    $validatedData['end_time'] = \Carbon\Carbon::parse($eventDate->format('Y-m-d') . ' ' . $validatedData['end_time'])->toDateTimeString();
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('Event time normalization failed on update', ['error' => $e->getMessage()]);
+            }
+
             $event->update($validatedData);
+
+            // Auto-register participants based on updated recipient selection (if provided)
+            $recipientSelectionRaw = $validatedData['recipient_selection'] ?? null;
+            $recipientSelection = null;
+            if ($recipientSelectionRaw) {
+                try {
+                    $recipientSelection = json_decode($recipientSelectionRaw, true, 512, JSON_THROW_ON_ERROR);
+                } catch (\Throwable $e) {
+                    \Log::warning('Invalid recipient_selection JSON on event update', ['error' => $e->getMessage()]);
+                }
+            }
+            if (is_array($recipientSelection)) {
+                $seniorIds = $this->resolveRecipientSeniorIds($recipientSelection);
+                if (!empty($seniorIds)) {
+                    $attachData = [];
+                    $now = now();
+                    $existingPivot = $event->participants()
+                        ->whereIn('seniors.id', $seniorIds)
+                        ->get()
+                        ->mapWithKeys(function ($participant) {
+                            return [$participant->id => (bool)$participant->pivot->attended];
+                        });
+                    foreach ($seniorIds as $sid) {
+                        $attachData[$sid] = [
+                            'registered_at' => $now,
+                            'attended' => (bool)($existingPivot[$sid] ?? false),
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+                    }
+                    $event->participants()->sync($attachData);
+                    $event->update(['current_participants' => $event->participants()->count()]);
+                }
+            }
+
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'event_id' => $event->id,
+                ]);
+            }
 
             return redirect()->route('events')
                 ->with('success', 'Event updated successfully!');
@@ -161,7 +282,47 @@ class EventController extends Controller
     public function participants(string $id): View
     {
         $event = Event::with(['participants', 'createdBy'])->findOrFail($id);
-        
+
+        // Auto-sync participants for pension events to match Social Pension table
+        try {
+            $selection = $event->recipient_selection ? json_decode($event->recipient_selection, true) : null;
+            $shouldSyncPension = ($event->event_type === 'pension')
+                || (is_array($selection) && in_array('category', ($selection['types'] ?? []), true) && in_array('pension', ($selection['categories'] ?? []), true));
+
+            if ($shouldSyncPension) {
+                $pensionSeniorIds = Application::where('application_type', 'pension')
+                    ->whereHas('senior')
+                    ->pluck('senior_id')
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
+
+                if (!empty($pensionSeniorIds)) {
+                    $existingIds = $event->participants()->pluck('seniors.id')->all();
+                    $missingIds = array_values(array_diff($pensionSeniorIds, $existingIds));
+                    if (!empty($missingIds)) {
+                        $now = now();
+                        $attachData = [];
+                        foreach ($missingIds as $sid) {
+                            $attachData[$sid] = [
+                                'registered_at' => $now,
+                                'attended' => false,
+                                'created_at' => $now,
+                                'updated_at' => $now,
+                            ];
+                        }
+                        $event->participants()->syncWithoutDetaching($attachData);
+                        $event->update(['current_participants' => $event->participants()->count()]);
+                        // Refresh relationship for the view
+                        $event->load('participants');
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Participants auto-sync skipped: '.$e->getMessage());
+        }
+
         // Get all seniors for potential registration
         $allSeniors = Senior::select('id', 'first_name', 'last_name', 'osca_id')->get();
         
@@ -309,5 +470,72 @@ class EventController extends Controller
             'id_claiming' => '#ffc107',
             default => '#6c757d'
         };
+    }
+
+    /**
+     * Resolve senior IDs to auto-register from recipient selection payload.
+     *
+     * Expected structure:
+     * [
+     *   'types' => ['all'|'barangay'|'category', ...],
+     *   'barangays' => ['all'|'<name>', ...],
+     *   'categories' => ['pension'|'id_applicants'|'benefit_applicants', ...]
+     * ]
+     */
+    private function resolveRecipientSeniorIds(array $selection): array
+    {
+        $ids = collect();
+
+        $types = collect($selection['types'] ?? []);
+
+        // All seniors
+        if ($types->contains('all')) {
+            $ids = $ids->merge(
+                Senior::pluck('id')
+            );
+        }
+
+        // Barangay-based selection
+        if ($types->contains('barangay')) {
+            $barangays = collect($selection['barangays'] ?? []);
+            if ($barangays->contains('all')) {
+                $ids = $ids->merge(
+                    Senior::pluck('id')
+                );
+            } else if ($barangays->isNotEmpty()) {
+                $ids = $ids->merge(
+                    Senior::whereIn('barangay', $barangays->all())->pluck('id')
+                );
+            }
+        }
+
+        // Category-based selection
+        if ($types->contains('category')) {
+            $categories = collect($selection['categories'] ?? []);
+
+            if ($categories->contains('pension')) {
+                // Match the Social Pension table source: seniors with a pension application record
+                $pensionSeniorIds = Application::where('application_type', 'pension')
+                    ->whereHas('senior')
+                    ->pluck('senior_id');
+                $ids = $ids->merge($pensionSeniorIds);
+            }
+            if ($categories->contains('benefit_applicants')) {
+                $benefitSeniorIds = BenefitsApplication::whereNotNull('senior_id')->pluck('senior_id');
+                $ids = $ids->merge($benefitSeniorIds);
+            }
+            if ($categories->contains('id_applicants')) {
+                $idSeniorIds = Application::where('application_type', 'senior_id')->pluck('senior_id');
+                $ids = $ids->merge($idSeniorIds);
+            }
+        }
+
+        // Ensure IDs are valid seniors (include all statuses)
+        $uniqueIds = $ids->filter()->unique()->values();
+        if ($uniqueIds->isEmpty()) {
+            return [];
+        }
+
+        return Senior::whereIn('id', $uniqueIds->all())->pluck('id')->all();
     }
 }

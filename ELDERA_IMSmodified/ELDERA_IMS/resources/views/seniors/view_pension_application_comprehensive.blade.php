@@ -14,9 +14,6 @@
                           </div>
                         
                           <div class="button-group">
-                              <a href="{{ route('seniors') }}" class="action-btn back-btn">
-                                  <i class="fas fa-arrow-left"></i> Back to Seniors
-                              </a>
                               <a href="{{ route('seniors.pension.edit', $application->id) }}" class="action-btn edit-btn">
 <i class="fas fa-edit"></i> Edit
                               </a>

@@ -252,7 +252,7 @@
       </li>
 
       
-      <li class="{{ request()->routeIs('events') ? 'active' : '' }}">
+      <li class="{{ request()->routeIs(['events', 'events.*']) ? 'active' : '' }}">
         <a href="{{ route('events') }}"><i class="fas fa-calendar-alt"></i> Events</a>
       </li>
       <li class="{{ request()->routeIs('admin.password-reset-requests.*') ? 'active' : '' }}">
