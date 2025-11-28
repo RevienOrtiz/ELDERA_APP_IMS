@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Cache;
 class Senior extends Model
 {
     use HasFactory, SoftDeletes;
+    protected $connection = 'eldera_ims';
 
     protected $fillable = [
         'osca_id',
@@ -251,4 +252,3 @@ class Senior extends Model
         });
     }
 }
-

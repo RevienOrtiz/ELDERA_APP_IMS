@@ -153,21 +153,7 @@
                         <input type="text" class="form-control" id="eventLocation" placeholder="Enter location">
                     </div>
                     
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="eventOrganizer" class="form-label fw-semibold">Organizer</label>
-                            <input type="text" class="form-control" id="eventOrganizer" placeholder="Enter organizer" value="LCSCF Office">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="eventContactPerson" class="form-label fw-semibold">Contact Person</label>
-                            <input type="text" class="form-control" id="eventContactPerson" placeholder="Enter contact person" value="Event Coordinator">
-                        </div>
-                    </div>
                     
-                    <div class="mb-3">
-                        <label for="eventContactNumber" class="form-label fw-semibold">Contact Number</label>
-                        <input type="text" class="form-control" id="eventContactNumber" placeholder="Enter contact number" value="000-000-0000">
-                    </div>
 
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Target Recipients Selection</label>
@@ -235,7 +221,7 @@
                                             <div class="form-check">
                                                 <input type="checkbox" id="category_pension" name="selectedCategories[]" value="pension" class="form-check-input">
                                                 <label for="category_pension" class="form-check-label">
-                                                    <strong>Pension Recipients</strong><br>
+                                                    <strong>Pension Applicants</strong><br>
                                                     <small class="text-muted">Seniors listed in the pension table</small>
                                                 </label>
                                             </div>
@@ -1508,6 +1494,9 @@
         }
 
         function renderCalendar() {
+            if (!currentDate || isNaN(currentDate.getTime())) {
+                currentDate = new Date();
+            }
             if (currentView === 'month') {
                 renderMonthView();
             } else if (currentView === 'week') {
@@ -1603,7 +1592,10 @@
 
         function updateCalendarTitle() {
             const options = { year: 'numeric', month: 'long' };
-            document.getElementById('calendarTitle').textContent = currentDate.toLocaleDateString('en-US', options);
+            const titleEl = document.getElementById('calendarTitle');
+            if (titleEl) {
+                titleEl.textContent = currentDate.toLocaleDateString('en-US', options);
+            }
         }
 
         function previousMonth() {
@@ -1664,10 +1656,12 @@
         function setView(view) {
             currentView = view;
             document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            document.querySelectorAll('.calendar-view').forEach(view => view.classList.remove('active'));
-            document.getElementById(view + 'View').classList.add('active');
-            renderCalendar();
+            const activeBtn = document.querySelector(`.view-btn[data-view="${view}"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+            document.querySelectorAll('.calendar-view').forEach(v => v.classList.remove('active'));
+            const targetView = document.getElementById(view + 'View');
+            if (targetView) targetView.classList.add('active');
+            try { renderCalendar(); } catch (e) { console.error('Calendar render failed', e); }
         }
 
         function selectDate(date) {
@@ -1741,8 +1735,8 @@
             
             // Validate date is not in the past
             const selectedDate = new Date(eventDate + 'T' + eventTime);
-            const currentDate = new Date();
-            if (selectedDate < currentDate) {
+            const now = new Date();
+            if (selectedDate < now) {
                 try { showValidationErrorModal('Validation Error', 'Please select a future date and time for the event.'); } catch (e) {}
                 document.getElementById('eventDate').focus();
                 return;
@@ -1765,14 +1759,13 @@
             formData.append('end_time', document.getElementById('eventEndTime').value);
             formData.append('description', document.getElementById('eventDescription').value);
             formData.append('location', document.getElementById('eventLocation').value);
-            formData.append('organizer', document.getElementById('eventOrganizer').value);
-            formData.append('contact_person', document.getElementById('eventContactPerson').value);
-            formData.append('contact_number', document.getElementById('eventContactNumber').value);
+            
             // Include recipient selection for backend processing
             formData.append('recipient_selection', JSON.stringify(recipientData));
             formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
             // Submit to server
+            let saveSucceeded = false;
             fetch('/Events', {
                 method: 'POST',
                 body: formData,
@@ -1782,41 +1775,62 @@
                 }
             })
             .then(response => {
+                const contentType = response.headers.get('Content-Type') || '';
                 if (!response.ok) {
                     return response.json().then(err => { throw err; }).catch(() => { throw new Error('Server error'); });
                 }
-                // Try to parse JSON for event_id
-                return response.json().catch(() => null);
+                if (contentType.includes('application/json')) {
+                    return response.json().catch(() => ({ success: true }));
+                }
+                // Treat successful non-JSON responses (e.g., redirects to HTML) as success
+                return { success: true };
             })
             .then(data => {
-                const addedEventId = data && data.success ? (data.event_id || null) : null;
-                closeEventModal();
+                if (!data || data.success !== true) {
+                    const msg = (data && data.message) ? data.message : 'Error saving event. Please try again.';
+                    throw new Error(msg);
+                }
 
+                // Capture field values BEFORE closing modal (closing resets the form)
+                const savedTitle = document.getElementById('eventTitle').value;
+                const savedType = document.getElementById('eventType').value;
+                const savedDate = document.getElementById('eventDate').value;
+                const savedTime = document.getElementById('eventTime').value;
+                const savedEndTime = document.getElementById('eventEndTime').value || null;
+                const savedDescription = document.getElementById('eventDescription').value;
+                const savedLocation = document.getElementById('eventLocation').value;
+
+                closeEventModal();
                 try { window.showSuccessModal('Event successfully added.', 'added'); } catch (e) {}
 
                 const newEvent = {
-                    id: addedEventId,
-                    title: document.getElementById('eventTitle').value,
-                    type: document.getElementById('eventType').value,
-                    date: document.getElementById('eventDate').value,
-                    time: document.getElementById('eventTime').value,
-                    end_time: document.getElementById('eventEndTime').value || null,
-                    description: document.getElementById('eventDescription').value,
-                    location: document.getElementById('eventLocation').value,
+                    id: data.event_id || null,
+                    title: savedTitle,
+                    type: savedType,
+                    date: savedDate,
+                    time: savedTime,
+                    end_time: savedEndTime,
+                    description: savedDescription,
+                    location: savedLocation,
                     status: 'upcoming'
                 };
                 events.push(newEvent);
-                renderCalendar();
+                const parsed = new Date(newEvent.date + 'T00:00:00');
+                currentDate = isNaN(parsed.getTime()) ? new Date() : parsed;
+                try { renderCalendar(); } catch (e) { console.error('Calendar rerender failed', e); }
+                saveSucceeded = true;
             })
             .catch(error => {
                 console.error('Error:', error);
-                try {
-                    const errModal = new bootstrap.Modal(document.getElementById('errorModal'));
-                    const msg = (error && error.errors) ? 'Please check all required fields.' : 'Error saving event. Please try again.';
-                    document.getElementById('errorMessage').innerText = msg;
-                    errModal.show();
-                } catch (e) {
-                    try { showValidationErrorModal('Error', 'Error saving event. Please try again.'); } catch (_) {}
+                if (!saveSucceeded) {
+                    try {
+                        const errModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                        const msg = (error && error.errors) ? 'Please check all required fields.' : (error && error.message) ? error.message : 'Error saving event. Please try again.';
+                        document.getElementById('errorMessage').innerText = msg;
+                        errModal.show();
+                    } catch (e) {
+                        try { showValidationErrorModal('Error', 'Error saving event. Please try again.'); } catch (_) {}
+                    }
                 }
             });
         });

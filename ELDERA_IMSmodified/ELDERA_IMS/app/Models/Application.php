@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Cache;
 class Application extends Model
 {
     use HasFactory;
+    protected $connection = 'eldera_ims';
 
     protected $fillable = [
         'senior_id',
@@ -196,4 +197,3 @@ class Application extends Model
         });
     }
 }
-

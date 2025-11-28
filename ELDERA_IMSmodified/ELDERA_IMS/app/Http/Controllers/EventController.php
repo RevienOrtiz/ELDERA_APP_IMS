@@ -51,9 +51,9 @@ class EventController extends Controller
                 'start_time' => 'required|date_format:H:i',
                 'end_time' => 'nullable|date_format:H:i|after:start_time',
                 'location' => 'required|string|max:255',
-                'organizer' => 'required|string|max:255',
-                'contact_person' => 'required|string|max:255',
-                'contact_number' => 'required|string|max:20',
+                'organizer' => 'nullable|string|max:255',
+                'contact_person' => 'nullable|string|max:255',
+                'contact_number' => 'nullable|string|max:20',
                 'requirements' => 'nullable|string',
                 // Recipient selection (JSON from UI)
                 'recipient_selection' => 'nullable|string',
@@ -73,12 +73,12 @@ class EventController extends Controller
 
             $validatedData['status'] = 'upcoming';
             $validatedData['current_participants'] = 0;
-            // Ensure created_by is set; fallback to user ID 1 if not authenticated
-            $validatedData['created_by'] = Auth::id() ?? 1;
+            if (Auth::check()) {
+                $validatedData['created_by'] = Auth::id();
+            }
 
-            $event = Event::create($validatedData);
-
-            // Auto-register participants based on recipient selection from UI
+            // Normalize recipient_selection from request and save only if column exists
+            $hasRecipientColumn = \Illuminate\Support\Facades\Schema::connection('eldera_ims')->hasColumn('events', 'recipient_selection');
             $recipientSelectionRaw = $validatedData['recipient_selection'] ?? null;
             $recipientSelection = null;
             if ($recipientSelectionRaw) {
@@ -88,6 +88,16 @@ class EventController extends Controller
                     \Log::warning('Invalid recipient_selection JSON on event store', ['error' => $e->getMessage()]);
                 }
             }
+            if ($hasRecipientColumn) {
+                $validatedData['recipient_selection'] = is_array($recipientSelection) ? $recipientSelection : null;
+            } else {
+                unset($validatedData['recipient_selection']);
+            }
+
+            $event = Event::create($validatedData);
+
+            // Auto-register participants based on recipient selection from UI
+            // Use already-normalized $recipientSelection above
 
             if (is_array($recipientSelection)) {
                 $seniorIds = $this->resolveRecipientSeniorIds($recipientSelection);
@@ -200,9 +210,8 @@ class EventController extends Controller
                 \Log::warning('Event time normalization failed on update', ['error' => $e->getMessage()]);
             }
 
-            $event->update($validatedData);
-
-            // Auto-register participants based on updated recipient selection (if provided)
+            // Normalize recipient_selection from request and save only if column exists
+            $hasRecipientColumn = \Illuminate\Support\Facades\Schema::connection('eldera_ims')->hasColumn('events', 'recipient_selection');
             $recipientSelectionRaw = $validatedData['recipient_selection'] ?? null;
             $recipientSelection = null;
             if ($recipientSelectionRaw) {
@@ -212,6 +221,13 @@ class EventController extends Controller
                     \Log::warning('Invalid recipient_selection JSON on event update', ['error' => $e->getMessage()]);
                 }
             }
+            if ($hasRecipientColumn) {
+                $validatedData['recipient_selection'] = is_array($recipientSelection) ? $recipientSelection : null;
+            } else {
+                unset($validatedData['recipient_selection']);
+            }
+
+            $event->update($validatedData);
             if (is_array($recipientSelection)) {
                 $seniorIds = $this->resolveRecipientSeniorIds($recipientSelection);
                 if (!empty($seniorIds)) {
@@ -285,7 +301,16 @@ class EventController extends Controller
 
         // Auto-sync participants for pension events to match Social Pension table
         try {
-            $selection = $event->recipient_selection ? json_decode($event->recipient_selection, true) : null;
+            $hasRecipientColumn = \Illuminate\Support\Facades\Schema::connection('eldera_ims')->hasColumn('events', 'recipient_selection');
+            $selection = null;
+            if ($hasRecipientColumn) {
+                $selection = is_array($event->recipient_selection)
+                    ? $event->recipient_selection
+                    : (function ($raw) {
+                        if (!$raw) return null;
+                        try { return json_decode($raw, true, 512, JSON_THROW_ON_ERROR); } catch (\Throwable $e) { return null; }
+                    })($event->recipient_selection);
+            }
             $shouldSyncPension = ($event->event_type === 'pension')
                 || (is_array($selection) && in_array('category', ($selection['types'] ?? []), true) && in_array('pension', ($selection['categories'] ?? []), true));
 
@@ -439,7 +464,6 @@ class EventController extends Controller
                     'title' => $event->title,
                     // Provide full IMS context for mobile app cards
                     'description' => $event->description,
-                    'organizer' => $event->organizer,
                     'requirements' => $event->requirements,
                     'start' => $event->event_date->format('Y-m-d'),
                     'end' => $event->event_date->format('Y-m-d'),
@@ -503,8 +527,9 @@ class EventController extends Controller
                     Senior::pluck('id')
                 );
             } else if ($barangays->isNotEmpty()) {
+                $selected = array_map('strtolower', $barangays->all());
                 $ids = $ids->merge(
-                    Senior::whereIn('barangay', $barangays->all())->pluck('id')
+                    Senior::whereIn(\Illuminate\Support\Facades\DB::raw('LOWER(barangay)'), $selected)->pluck('id')
                 );
             }
         }
