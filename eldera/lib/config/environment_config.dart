@@ -6,7 +6,7 @@ import '../services/secure_storage_service.dart';
 class EnvironmentConfig {
   static const String _environment = String.fromEnvironment(
     'ENVIRONMENT',
-    defaultValue: 'development',
+    defaultValue: 'production',
   );
 
   // Cached secure credentials
@@ -45,7 +45,7 @@ class EnvironmentConfig {
       case 'production':
         return const String.fromEnvironment(
           'API_URL_PROD',
-          defaultValue: 'https://eldera-ims.com',
+          defaultValue: 'https://eldera-osca.com',
         );
       case 'staging':
         return const String.fromEnvironment(
@@ -61,7 +61,7 @@ class EnvironmentConfig {
           return const String.fromEnvironment(
             'API_URL_DEV',
             defaultValue:
-                'http://192.168.1.127:8000', // Updated to match Laravel server IP
+                'http://192.168.18.182:8000', // Updated to match Laravel server IP
           );
         } else {
           // For Android devices, use 10.0.2.2 which maps to host machine's localhost
@@ -75,7 +75,7 @@ class EnvironmentConfig {
     }
   }
 
-  // Legacy IMS API Configuration
+  // Legacy IMS API Configurationq
   static String get imsApiBaseUrl {
     switch (_environment) {
       case 'production':

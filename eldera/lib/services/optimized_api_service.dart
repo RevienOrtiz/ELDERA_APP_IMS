@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../utils/memory_optimizer.dart';
 import '../utils/secure_logger.dart';
+import '../config/environment_config.dart';
 
 /// Optimized API service for low-end devices with better timeout handling
 class OptimizedApiService {
@@ -11,20 +12,20 @@ class OptimizedApiService {
   factory OptimizedApiService() => _instance;
   OptimizedApiService._internal();
 
-  // Base configuration
-  static const String baseUrl = 'http://10.0.2.2/capstoneIMS_ELDERA/public/api';
-  static const String webBaseUrl = 'http://localhost/capstoneIMS_ELDERA/public/api';
-  
+  // Base configuration derived from environment
+  static String get baseUrl => '${EnvironmentConfig.apiBaseUrl}/api';
+  static String get webBaseUrl => '${EnvironmentConfig.apiBaseUrl}/api';
+
   // Timeout configurations based on device capability
   static Duration get _connectTimeout {
-    return MemoryOptimizer.isBudgetDevice() 
-        ? const Duration(seconds: 15)  // Longer timeout for budget devices
+    return MemoryOptimizer.isBudgetDevice()
+        ? const Duration(seconds: 15) // Longer timeout for budget devices
         : const Duration(seconds: 10);
   }
-  
+
   static Duration get _receiveTimeout {
-    return MemoryOptimizer.isBudgetDevice() 
-        ? const Duration(seconds: 30)  // Longer timeout for budget devices
+    return MemoryOptimizer.isBudgetDevice()
+        ? const Duration(seconds: 30) // Longer timeout for budget devices
         : const Duration(seconds: 20);
   }
 
@@ -34,7 +35,7 @@ class OptimizedApiService {
   }
 
   static Duration get _retryDelay {
-    return MemoryOptimizer.isBudgetDevice() 
+    return MemoryOptimizer.isBudgetDevice()
         ? const Duration(seconds: 2)
         : const Duration(seconds: 1);
   }
@@ -45,7 +46,8 @@ class OptimizedApiService {
   /// Initialize the service
   void initialize() {
     _httpClient = http.Client();
-    SecureLogger.info('OptimizedApiService initialized for ${MemoryOptimizer.isBudgetDevice() ? "budget" : "standard"} device');
+    SecureLogger.info(
+        'OptimizedApiService initialized for ${MemoryOptimizer.isBudgetDevice() ? "budget" : "standard"} device');
   }
 
   /// Set authorization token
@@ -65,7 +67,8 @@ class OptimizedApiService {
     final headers = <String, String>{
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'User-Agent': 'ELDERA-Mobile/${MemoryOptimizer.isBudgetDevice() ? "Budget" : "Standard"}',
+      'User-Agent':
+          'ELDERA-Mobile/${MemoryOptimizer.isBudgetDevice() ? "Budget" : "Standard"}',
     };
 
     if (_authToken != null) {
@@ -90,37 +93,40 @@ class OptimizedApiService {
 
     while (attempts < _maxRetries) {
       attempts++;
-      
+
       try {
         SecureLogger.info('API Request: $method $endpoint (Attempt $attempts)');
-        
+
         final response = await requestFunction().timeout(
           _receiveTimeout,
           onTimeout: () {
-            throw TimeoutException('Request timeout after ${_receiveTimeout.inSeconds}s', _receiveTimeout);
+            throw TimeoutException(
+                'Request timeout after ${_receiveTimeout.inSeconds}s',
+                _receiveTimeout);
           },
         );
 
-        SecureLogger.info('API Response: ${response.statusCode} for $method $endpoint');
-        
+        SecureLogger.info(
+            'API Response: ${response.statusCode} for $method $endpoint');
+
         // Success or client error (don't retry client errors)
         if (response.statusCode < 500) {
           return response;
         }
-        
+
         // Server error - retry if not last attempt
         if (attempts < _maxRetries) {
-          SecureLogger.warning('Server error ${response.statusCode}, retrying in ${_retryDelay.inSeconds}s...');
+          SecureLogger.warning(
+              'Server error ${response.statusCode}, retrying in ${_retryDelay.inSeconds}s...');
           await Future.delayed(_retryDelay);
           continue;
         }
-        
+
         return response;
-        
       } on SocketException catch (e) {
         lastException = e;
         SecureLogger.error('Network error on attempt $attempts: $e');
-        
+
         if (attempts < _maxRetries) {
           await Future.delayed(_retryDelay);
           continue;
@@ -128,7 +134,7 @@ class OptimizedApiService {
       } on TimeoutException catch (e) {
         lastException = e;
         SecureLogger.error('Timeout on attempt $attempts: $e');
-        
+
         if (attempts < _maxRetries) {
           await Future.delayed(_retryDelay);
           continue;
@@ -136,7 +142,7 @@ class OptimizedApiService {
       } on Exception catch (e) {
         lastException = e;
         SecureLogger.error('Request error on attempt $attempts: $e');
-        
+
         // Don't retry for non-network errors
         break;
       }
@@ -154,10 +160,11 @@ class OptimizedApiService {
   }) async {
     try {
       String url = '$baseUrl$endpoint';
-      
+
       if (queryParams != null && queryParams.isNotEmpty) {
         final queryString = queryParams.entries
-            .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value.toString())}')
+            .map((e) =>
+                '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value.toString())}')
             .join('&');
         url += '?$queryString';
       }
@@ -252,14 +259,16 @@ class OptimizedApiService {
   Map<String, dynamic> _handleResponse(http.Response response) {
     try {
       if (response.body.isEmpty) {
-        return {'success': response.statusCode >= 200 && response.statusCode < 300};
+        return {
+          'success': response.statusCode >= 200 && response.statusCode < 300
+        };
       }
 
       final Map<String, dynamic> data = jsonDecode(response.body);
-      
+
       // Add status code to response for better error handling
       data['_statusCode'] = response.statusCode;
-      
+
       return data;
     } catch (e) {
       SecureLogger.error('Failed to parse response: $e');
@@ -273,7 +282,7 @@ class OptimizedApiService {
       final response = await _httpClient
           .get(Uri.parse('$baseUrl/health'))
           .timeout(const Duration(seconds: 5));
-      
+
       return response.statusCode == 200;
     } catch (e) {
       SecureLogger.warning('Connectivity check failed: $e');

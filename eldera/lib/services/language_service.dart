@@ -208,6 +208,12 @@ class LanguageService {
     'select_language': 'Select Language',
     'language_changed': 'Language changed successfully',
     'sample_text_preview': 'Font size preview',
+    'change_password': 'Change Password',
+    'current_password': 'Current Password',
+    'new_password': 'New Password',
+    'confirm_password': 'Confirm New Password',
+    'password_changed': 'Password changed successfully',
+    'password_change_failed': 'Failed to change password',
 
     // Profile screen
     'profile': 'Profile',
@@ -226,6 +232,7 @@ class LanguageService {
     'pension': 'PENSION',
     'health': 'HEALTH',
     'general': 'GENERAL',
+    'id_claiming': 'ID',
     'benefits': 'BENEFITS',
     'dswd_pension': 'DSWD Pension',
     'read_more': 'Read More',
@@ -359,6 +366,12 @@ class LanguageService {
     'select_language': 'Pumili ng Wika',
     'language_changed': 'Matagumpay na nabago ang wika',
     'sample_text_preview': 'Laki ng font',
+    'change_password': 'Palitan ang Password',
+    'current_password': 'Kasalukuyang Password',
+    'new_password': 'Bagong Password',
+    'confirm_password': 'Kumpirmahin ang Bagong Password',
+    'password_changed': 'Matagumpay na napalitan ang password',
+    'password_change_failed': 'Nabigo ang pagpapalit ng password',
 
     // Profile screen
     'profile': 'Profile',
@@ -377,6 +390,7 @@ class LanguageService {
     'pension': 'PENSYON',
     'health': 'KALUSUGAN',
     'general': 'PANGKALAHATAN',
+    'id_claiming': 'ID',
     'benefits': 'MGA BENEPISYO',
     'dswd_pension': 'DSWD Pension',
     'read_more': 'Basahin pa',
