@@ -187,6 +187,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return scaledSize < 14.0 ? 14.0 : scaledSize;
   }
 
+  double _getSafeScaledIconSize({
+    double baseSize = 24.0,
+    double scaleFactor = 1.0,
+  }) {
+    // Check if FontSizeService is properly initialized
+    if (!_fontSizeService.isInitialized) {
+      // Return default icon size if service not initialized
+      return baseSize * scaleFactor;
+    }
+
+    // Scale icon size based on font size
+    // Use a ratio of icon size to font size (24px icon for 20px font = 1.2 ratio)
+    double fontSizeRatio =
+        _fontSizeService.fontSize / _fontSizeService.defaultFontSize;
+    return baseSize * fontSizeRatio * scaleFactor;
+  }
+
   Future<void> _loadAnnouncements() async {
     try {
       setState(() {
@@ -439,9 +456,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.error_outline,
-              size: 64,
+              size: _getSafeScaledIconSize(baseSize: 64.0),
               color: Color(0xFF2E8B8B),
             ),
             const SizedBox(height: 16),
@@ -468,9 +485,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.notifications_none,
-              size: 64,
+              size: _getSafeScaledIconSize(baseSize: 64.0),
               color: Color(0xFF2E8B8B),
             ),
             const SizedBox(height: 16),
@@ -490,7 +507,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return RefreshIndicator(
       onRefresh: _loadAnnouncements,
       child: ListView.builder(
-        padding: const EdgeInsets.only(left: 8.0, right: 8.0, bottom: 16.0), // Reduced side padding for more compact layout
+        padding: const EdgeInsets.only(
+            left: 8.0,
+            right: 8.0,
+            bottom: 16.0), // Reduced side padding for more compact layout
         itemCount: announcements.length,
         itemBuilder: (context, index) {
           final announcement = announcements[index];
@@ -516,23 +536,28 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final double iconBgOpacity = isViewed ? 0.85 : 1.0;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12, top: 0), // Removed top margin completely
-      padding: const EdgeInsets.all(12), // Drastically reduced padding for ultra-compact layout
+      margin: const EdgeInsets.only(
+          bottom: 12, top: 0), // Removed top margin completely
+      padding: const EdgeInsets.all(
+          12), // Drastically reduced padding for ultra-compact layout
       decoration: BoxDecoration(
         color: categoryColor.withOpacity(bgOpacity),
-        borderRadius: BorderRadius.circular(20), // More rounded corners for modern look
+        borderRadius:
+            BorderRadius.circular(20), // More rounded corners for modern look
         border: Border.all(
             color: categoryColor.withOpacity(borderOpacity),
             width: 1.2), // Slightly adjusted border width
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12), // Enhanced shadow for better depth
+            color: Colors.black
+                .withOpacity(0.12), // Enhanced shadow for better depth
             spreadRadius: 0,
             blurRadius: 12, // Increased blur for softer shadow
             offset: const Offset(0, 4), // More pronounced offset
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.06), // Additional subtle shadow layer
+            color: Colors.black
+                .withOpacity(0.06), // Additional subtle shadow layer
             spreadRadius: 2,
             blurRadius: 20,
             offset: const Offset(0, 8),
@@ -553,7 +578,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 children: [
                   // "NEW" text on the left
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFF4444), // Red background
                       borderRadius: BorderRadius.circular(8),
@@ -572,7 +598,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     width: 12,
                     height: 12,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFF4444), // Changed to red for better visibility
+                      color: const Color(
+                          0xFFFF4444), // Changed to red for better visibility
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: Colors.white,
@@ -591,7 +618,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 ],
               ),
             if (!isViewed) const SizedBox(height: 8),
-            
+
             // Compact main content row with button on right
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -609,19 +636,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           fontSize: _getSafeScaledFontSize(isSubtitle: true),
                           fontWeight: FontWeight.w700, // Bolder title
                           color: Colors.black87,
-                          height: 1.1, // Reduced line height for more compact appearance
+                          height:
+                              1.1, // Reduced line height for more compact appearance
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4), // Further reduced spacing for ultra-compact layout
-                      
+                      const SizedBox(
+                          height:
+                              4), // Further reduced spacing for ultra-compact layout
+
                       // Enhanced description
                       Text(
-                        LanguageService.instance.translateFreeText(announcement.what),
+                        LanguageService.instance
+                            .translateFreeText(announcement.what),
                         style: TextStyle(
-                          fontSize: _getSafeScaledFontSize(baseSize: 0.85), // Slightly smaller for compactness
-                          color: Colors.black.withOpacity(0.75), // Better contrast
+                          fontSize: _getSafeScaledFontSize(
+                              baseSize:
+                                  0.85), // Slightly smaller for compactness
+                          color:
+                              Colors.black.withOpacity(0.75), // Better contrast
                           height: 1.3, // Reduced line height for compactness
                           fontWeight: FontWeight.w400,
                         ),
@@ -629,20 +663,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8), // Reduced spacing
-                      
+
                       // Enhanced time ago with icon
                       Row(
                         children: [
                           Icon(
                             Icons.access_time,
-                            size: 12, // Smaller icon for compactness
+                            size: _getSafeScaledIconSize(baseSize: 12.0),
                             color: Colors.black.withOpacity(0.6),
                           ),
                           const SizedBox(width: 3),
                           Text(
                             timeAgo,
                             style: TextStyle(
-                              fontSize: _getSafeScaledFontSize(baseSize: 0.7), // Smaller text
+                              fontSize: _getSafeScaledFontSize(
+                                  baseSize: 0.7), // Smaller text
                               color: Colors.black.withOpacity(0.65),
                               fontWeight: FontWeight.w500,
                             ),
@@ -652,7 +687,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     ],
                   ),
                 ),
-                
+
                 // Compact VIEW button on the right
                 GestureDetector(
                   onTap: () {
@@ -660,7 +695,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     _showAnnouncementDetails(announcement);
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), // Compact padding
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6), // Compact padding
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -670,10 +706,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(10), // Slightly smaller radius
+                      borderRadius:
+                          BorderRadius.circular(10), // Slightly smaller radius
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF00BFFF).withOpacity(0.3), // Reduced shadow
+                          color: const Color(0xFF00BFFF)
+                              .withOpacity(0.3), // Reduced shadow
                           spreadRadius: 0,
                           blurRadius: 6,
                           offset: const Offset(0, 2),
@@ -687,16 +725,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           _getSafeText('view'),
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: _getSafeScaledFontSize(baseSize: 0.75), // Slightly smaller
+                            fontSize: _getSafeScaledFontSize(
+                                baseSize: 0.75), // Slightly smaller
                             fontWeight: FontWeight.w700,
                             letterSpacing: 0.4,
                           ),
                         ),
                         const SizedBox(width: 3),
-                        const Icon(
+                        Icon(
                           Icons.arrow_forward_ios,
                           color: Colors.white,
-                          size: 10, // Smaller icon
+                          size: _getSafeScaledIconSize(baseSize: 10.0),
                         ),
                       ],
                     ),
@@ -752,11 +791,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   const SizedBox(height: 16),
                   const Divider(),
                   const SizedBox(height: 8),
-                  Row(
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
-                      const Icon(Icons.notifications,
-                          size: 20, color: Colors.blue),
-                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.notifications,
+                        size: _getSafeScaledIconSize(baseSize: 20.0),
+                        color: Colors.blue,
+                      ),
                       Text(
                         _getSafeText('reminder') + ':',
                         style: TextStyle(
@@ -764,15 +808,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           fontSize: _getSafeScaledFontSize(baseSize: 0.7),
                         ),
                       ),
-                      const Spacer(),
                       if (hasReminder)
                         Chip(
                           label: Text(
                             ReminderService.getReminderTypeText(
                                 reminderInfo?.reminderType),
                             style: TextStyle(
-                                fontSize:
-                                    _getSafeScaledFontSize(baseSize: 0.6)),
+                              fontSize: _getSafeScaledFontSize(baseSize: 0.6),
+                            ),
                           ),
                           backgroundColor: Colors.green.withOpacity(0.1),
                           deleteIcon: const Icon(Icons.close, size: 16),
@@ -780,7 +823,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             final prefs = await SharedPreferences.getInstance();
                             final calendarSyncEnabled =
                                 prefs.getBool('calendar_sync_enabled') ?? false;
-
                             await reminderService.removeReminder(
                               announcement.id,
                               removeFromCalendar: calendarSyncEnabled,
@@ -792,7 +834,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
-                          constraints: const BoxConstraints(maxWidth: 160),
+                          constraints: const BoxConstraints(maxWidth: 180),
                           decoration: BoxDecoration(
                             color: Colors.grey.shade300,
                             borderRadius: BorderRadius.circular(20),
@@ -800,31 +842,42 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.notifications_off,
-                                  size: 16, color: Colors.grey),
+                              Icon(
+                                Icons.notifications_off,
+                                size: _getSafeScaledIconSize(baseSize: 16.0),
+                                color: Colors.grey,
+                              ),
                               const SizedBox(width: 6),
-                              Text(
-                                _getSafeText('set_reminder'),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey,
+                              Flexible(
+                                child: Text(
+                                  _getSafeText('set_reminder'),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.grey,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
                         )
                       else
-                        TextButton.icon(
-                          onPressed: () {
-                            _showReminderOptions(
-                                context, announcement, setState);
-                          },
-                          icon: const Icon(Icons.add, size: 16),
-                          label: Text(_getSafeText('set_reminder')),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.blue,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 220),
+                          child: TextButton.icon(
+                            onPressed: () {
+                              _showReminderOptions(
+                                  context, announcement, setState);
+                            },
+                            icon: Icon(
+                              Icons.add,
+                              size: _getSafeScaledIconSize(baseSize: 16.0),
+                            ),
+                            label: Text(_getSafeText('set_reminder')),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.blue,
+                            ),
                           ),
                         ),
                     ],

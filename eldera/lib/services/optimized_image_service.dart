@@ -3,13 +3,15 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../utils/memory_optimizer.dart';
 import '../utils/secure_logger.dart';
 
 /// Optimized image service for low-end devices
 /// Provides memory-efficient image loading and caching
 class OptimizedImageService {
-  static final OptimizedImageService _instance = OptimizedImageService._internal();
+  static final OptimizedImageService _instance =
+      OptimizedImageService._internal();
   factory OptimizedImageService() => _instance;
   OptimizedImageService._internal();
 
@@ -24,6 +26,7 @@ class OptimizedImageService {
     double? height,
     BoxFit fit = BoxFit.contain,
     bool enableMemoryOptimization = true,
+    bool preferHighQuality = false,
   }) async {
     try {
       // For low-end devices, use smaller image dimensions
@@ -37,11 +40,14 @@ class OptimizedImageService {
         width: width,
         height: height,
         fit: fit,
-        cacheWidth: width?.toInt(),
-        cacheHeight: height?.toInt(),
-        filterQuality: MemoryOptimizer.isBudgetDevice() 
-            ? FilterQuality.low 
-            : FilterQuality.medium,
+        cacheWidth: preferHighQuality ? null : width?.toInt(),
+        cacheHeight: preferHighQuality ? null : height?.toInt(),
+        // Use high filter quality for critical assets when requested
+        filterQuality: preferHighQuality
+            ? FilterQuality.high
+            : (MemoryOptimizer.isBudgetDevice()
+                ? FilterQuality.low
+                : FilterQuality.medium),
         errorBuilder: (context, error, stackTrace) {
           SecureLogger.error('Failed to load image: $assetPath - $error');
           return _buildErrorPlaceholder(width, height);
@@ -75,18 +81,23 @@ class OptimizedImageService {
     double? size,
     bool isLowMemoryMode = false,
   }) async {
-    // Use smaller logo for low-end devices
-    final logoSize = isLowMemoryMode || MemoryOptimizer.isBudgetDevice() 
-        ? (size ?? 120) * 0.8 
-        : size ?? 120;
+    // Prefer crisp rendering for the app logo across all devices
+    final logoSize = size ?? 120;
 
-    return await loadOptimizedImage(
-      assetPath: 'assets/images/eldera_logo.png',
-      width: logoSize,
-      height: logoSize,
-      fit: BoxFit.contain,
-      enableMemoryOptimization: true,
-    );
+    // Load the original PNG logo with high-quality filtering, without downsizing
+    try {
+      return await loadOptimizedImage(
+        assetPath: 'assets/images/eldera_logo.png',
+        width: logoSize,
+        height: logoSize,
+        fit: BoxFit.contain,
+        enableMemoryOptimization: false,
+        preferHighQuality: true,
+      );
+    } catch (e) {
+      SecureLogger.error('Failed to load PNG logo: $e');
+      return _buildErrorPlaceholder(logoSize, logoSize);
+    }
   }
 
   /// Preload critical images for better performance
@@ -170,7 +181,7 @@ class OptimizedImageService {
   /// Optimize image cache settings for current device
   static void optimizeImageCacheForDevice() {
     final imageCache = PaintingBinding.instance.imageCache;
-    
+
     if (MemoryOptimizer.isBudgetDevice()) {
       // Very conservative settings for budget devices
       imageCache.maximumSize = 25;
@@ -180,7 +191,7 @@ class OptimizedImageService {
       imageCache.maximumSize = 100;
       imageCache.maximumSizeBytes = 64 << 20; // 64MB
     }
-    
+
     SecureLogger.info('Image cache optimized for device type');
   }
 
@@ -201,12 +212,12 @@ class OptimizedImageService {
   static void reduceImageQuality() {
     // Clear high-quality cached images
     _resizedImageCache.clear();
-    
+
     // Reduce image cache size further
     final imageCache = PaintingBinding.instance.imageCache;
     imageCache.maximumSize = (imageCache.maximumSize * 0.5).round();
     imageCache.maximumSizeBytes = (imageCache.maximumSizeBytes * 0.5).round();
-    
+
     SecureLogger.info('Image quality reduced for memory optimization');
   }
 }

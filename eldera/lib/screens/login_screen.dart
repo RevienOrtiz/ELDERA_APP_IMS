@@ -23,6 +23,8 @@ class _LoginScreenState extends State<LoginScreen> {
   late final FontSizeService _fontSizeService;
   bool _isLoading = false;
   bool _obscurePassword = true;
+  final FocusNode _oscaIdFocus = FocusNode();
+  final FocusNode _passwordFocus = FocusNode();
 
   @override
   void initState() {
@@ -65,6 +67,23 @@ class _LoginScreenState extends State<LoginScreen> {
       isSubtitle: isSubtitle,
       isCaption: isCaption,
     );
+  }
+
+  double _getSafeScaledIconSize({
+    double baseSize = 24.0,
+    double scaleFactor = 1.0,
+  }) {
+    // Check if FontSizeService is properly initialized
+    if (!_fontSizeService.isInitialized) {
+      // Return default icon size if service not initialized
+      return baseSize * scaleFactor;
+    }
+
+    // Scale icon size based on font size
+    // Use a ratio of icon size to font size (24px icon for 20px font = 1.2 ratio)
+    double fontSizeRatio =
+        _fontSizeService.fontSize / _fontSizeService.defaultFontSize;
+    return baseSize * fontSizeRatio * scaleFactor;
   }
 
   Future<void> _checkLoginStatus() async {
@@ -285,9 +304,11 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: isLoading ? null : () {
-                    Navigator.of(context).pop();
-                  },
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          Navigator.of(context).pop();
+                        },
                   child: Text(
                     'Cancel',
                     style: TextStyle(
@@ -297,46 +318,50 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: isLoading ? null : () async {
-                    final oscaId = oscaIdController.text.trim();
-                    
-                    if (oscaId.isEmpty) {
-                      _showMessage('Please enter your OSCA ID', isError: true);
-                      return;
-                    }
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          final oscaId = oscaIdController.text.trim();
 
-                    setState(() {
-                      isLoading = true;
-                    });
+                          if (oscaId.isEmpty) {
+                            _showMessage('Please enter your OSCA ID',
+                                isError: true);
+                            return;
+                          }
 
-                    try {
-                      final result = await AuthService.requestPasswordReset(
-                        oscaId: oscaId,
-                      );
+                          setState(() {
+                            isLoading = true;
+                          });
 
-                      if (result['success']) {
-                        Navigator.of(context).pop();
-                        _showMessage(
-                          result['message'],
-                          isError: false,
-                        );
-                      } else {
-                        _showMessage(
-                          result['message'],
-                          isError: true,
-                        );
-                      }
-                    } catch (e) {
-                      _showMessage(
-                        'An error occurred. Please try again.',
-                        isError: true,
-                      );
-                    } finally {
-                      setState(() {
-                        isLoading = false;
-                      });
-                    }
-                  },
+                          try {
+                            final result =
+                                await AuthService.requestPasswordReset(
+                              oscaId: oscaId,
+                            );
+
+                            if (result['success']) {
+                              Navigator.of(context).pop();
+                              _showMessage(
+                                result['message'],
+                                isError: false,
+                              );
+                            } else {
+                              _showMessage(
+                                result['message'],
+                                isError: true,
+                              );
+                            }
+                          } catch (e) {
+                            _showMessage(
+                              'An error occurred. Please try again.',
+                              isError: true,
+                            );
+                          } finally {
+                            setState(() {
+                              isLoading = false;
+                            });
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2D5A5A),
                     foregroundColor: Colors.white,
@@ -350,7 +375,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : Text(
@@ -381,204 +407,221 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const SizedBox(height: 30),
               // App Logo/Title
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 160,
-                      height: 160,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(40),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 6),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 130,
+                        height: 130,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(40),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 20,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14.0),
+                          child: FutureBuilder<Widget>(
+                            future: OptimizedImageService.loadLogo(
+                              size: 96,
+                              isLowMemoryMode: MemoryOptimizer.isBudgetDevice(),
+                            ),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const SizedBox(
+                                  width: 96,
+                                  height: 96,
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                );
+                              } else if (snapshot.hasError) {
+                                return Icon(
+                                  Icons.error,
+                                  size: _getSafeScaledIconSize(baseSize: 96.0),
+                                  color: Colors.grey,
+                                );
+                              } else {
+                                return snapshot.data ??
+                                    Icon(
+                                      Icons.image,
+                                      size: _getSafeScaledIconSize(
+                                          baseSize: 96.0),
+                                      color: Colors.grey,
+                                    );
+                              }
+                            },
                           ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: FutureBuilder<Widget>(
-                          future: OptimizedImageService.loadLogo(
-                            size: 112,
-                            isLowMemoryMode: MemoryOptimizer.isBudgetDevice(),
-                          ),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return const SizedBox(
-                                width: 112,
-                                height: 112,
-                                child: Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              );
-                            } else if (snapshot.hasError) {
-                              return const Icon(
-                                Icons.error,
-                                size: 112,
-                                color: Colors.grey,
-                              );
-                            } else {
-                              return snapshot.data ?? const Icon(
-                                Icons.image,
-                                size: 112,
-                                color: Colors.grey,
-                              );
-                            }
-                          },
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'ELDERA',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: _getSafeScaledFontSize(
-                            isTitle: true, baseSize: 2.0),
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
+                      const SizedBox(height: 20),
+                      Text(
+                        'ELDERA',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: _getSafeScaledFontSize(
+                              isTitle: true, baseSize: 2.0),
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.5,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 60),
               // Login Form
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Login to Your Account',
-                      style: TextStyle(
-                        fontSize: _getSafeScaledFontSize(isSubtitle: true),
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textOnWhite,
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 32),
-                    // OSCA ID Field
-                    TextField(
-                      controller: _oscaIdController,
-                      keyboardType: TextInputType.text,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      autofillHints: const [AutofillHints.username],
-                      decoration: InputDecoration(
-                        labelText: 'Enter your OSCA ID no.',
-                        hintText: 'Enter your OSCA ID no.',
-                        prefixIcon: const Icon(Icons.badge),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                              color: Color(0xFF2D5A5A), width: 2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    // Password Field
-                    TextField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      autofillHints: const [AutofillHints.password],
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        hintText: 'Enter your password',
-                        prefixIcon: const Icon(Icons.lock),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                              color: Color(0xFF2D5A5A), width: 2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    // Login Button
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _login,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2D5A5A),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 2,
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : Text(
-                              'LOGIN',
-                              style: TextStyle(
-                                fontSize:
-                                    _getSafeScaledFontSize(isSubtitle: true),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Forgot Password Link
-                    TextButton(
-                      onPressed: _showForgotPasswordDialog,
-                      child: Text(
-                        'Forgot Password?',
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Login to Your Account',
                         style: TextStyle(
-                          color: const Color(0xFF2D5A5A),
-                          fontSize: _getSafeScaledFontSize(baseSize: 0.9),
-                          fontWeight: FontWeight.w500,
+                          fontSize: _getSafeScaledFontSize(isSubtitle: true),
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textOnWhite,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 32),
+                      // OSCA ID Field
+                      TextField(
+                        controller: _oscaIdController,
+                        focusNode: _oscaIdFocus,
+                        keyboardType: TextInputType.text,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        autofillHints: const [AutofillHints.username],
+                        textInputAction: TextInputAction.next,
+                        onSubmitted: (_) => _passwordFocus.requestFocus(),
+                        decoration: InputDecoration(
+                          labelText: 'Enter your OSCA ID no.',
+                          hintText: 'Enter your OSCA ID no.',
+                          prefixIcon: const Icon(Icons.badge),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                                color: Color(0xFF2D5A5A), width: 2),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 20),
+                      // Password Field
+                      TextField(
+                        controller: _passwordController,
+                        focusNode: _passwordFocus,
+                        obscureText: _obscurePassword,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        autofillHints: const [AutofillHints.password],
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _login(),
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          hintText: 'Enter your password',
+                          prefixIcon: const Icon(Icons.lock),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                                color: Color(0xFF2D5A5A), width: 2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      // Login Button
+                      ElevatedButton(
+                        onPressed: _isLoading ? null : _login,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2D5A5A),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
+                                ),
+                              )
+                            : Text(
+                                'LOGIN',
+                                style: TextStyle(
+                                  fontSize:
+                                      _getSafeScaledFontSize(isSubtitle: true),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Forgot Password Link
+                      TextButton(
+                        onPressed: _showForgotPasswordDialog,
+                        child: Text(
+                          'Forgot Password?',
+                          style: TextStyle(
+                            color: const Color(0xFF2D5A5A),
+                            fontSize: _getSafeScaledFontSize(baseSize: 0.9),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 40),
@@ -594,7 +637,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Icon(
                       Icons.info_outline,
                       color: Colors.white70,
-                      size: 24,
+                      size: _getSafeScaledIconSize(),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -619,6 +662,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _oscaIdController.dispose();
     _passwordController.dispose();
+    _oscaIdFocus.dispose();
+    _passwordFocus.dispose();
     super.dispose();
   }
 }

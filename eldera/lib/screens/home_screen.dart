@@ -21,7 +21,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String selectedCategory = 'ALL';
-  List<String> categories = ['ALL', 'PENSION', 'HEALTH', 'GENERAL'];
+  List<String> categories = ['ALL', 'PENSION', 'HEALTH', 'GENERAL', 'ID'];
   late GeminiTtsService geminiTts;
   List<Announcement> announcements = [];
   bool isLoading = true;
@@ -47,7 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _getSafeText('all'),
         _getSafeText('pension'),
         _getSafeText('health'),
-        _getSafeText('general')
+        _getSafeText('general'),
+        _getSafeText('id_claiming')
       ];
       if (selectedCategory == 'ALL') selectedCategory = _getSafeText('all');
     });
@@ -95,19 +96,37 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  double _getSafeScaledIconSize({
+    double baseSize = 24.0,
+    double scaleFactor = 1.0,
+  }) {
+    // Check if FontSizeService is properly initialized
+    if (!_fontSizeService.isInitialized) {
+      // Return default icon size if service not initialized
+      return baseSize * scaleFactor;
+    }
+
+    // Scale icon size based on font size
+    // Use a ratio of icon size to font size (24px icon for 20px font = 1.2 ratio)
+    double fontSizeRatio =
+        _fontSizeService.fontSize / _fontSizeService.defaultFontSize;
+    return baseSize * fontSizeRatio * scaleFactor;
+  }
+
   Future<void> _initializeGeminiTts() async {
     try {
       geminiTts = GeminiTtsService();
-      
+
       // Get API key from SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       String? apiKey = prefs.getString('gemini_api_key');
-      
+
       if (apiKey == null || apiKey.isEmpty) {
-        print('Gemini TTS: No API key found. Please configure your Gemini API key in settings.');
+        print(
+            'Gemini TTS: No API key found. Please configure your Gemini API key in settings.');
         return;
       }
-      
+
       await geminiTts.initialize(apiKey);
       print('Gemini TTS: Successfully initialized with Kore voice');
     } catch (e) {
@@ -272,6 +291,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'general':
         return const Color(0xFFD1FFC8); // Green
       case 'id_claiming':
+      case 'id':
         return const Color(0xFFE9DE89); // Yellow
       default:
         return Colors.grey[300]!; // Default for ALL
@@ -303,8 +323,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? _getCategoryColor(category)
-                              : Colors.grey[300],
+                              ? Colors.grey[300]
+                              : _getCategoryColor(category),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -314,8 +334,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             fontWeight: FontWeight.w500,
                             color: ContrastUtils.getAccessibleTextColor(
                               isSelected
-                                  ? _getCategoryColor(category)
-                                  : Colors.grey[300]!,
+                                  ? Colors.grey[300]!
+                                  : _getCategoryColor(category),
                               preferDark: true,
                             ),
                           ),
@@ -454,7 +474,10 @@ class _HomeScreenState extends State<HomeScreen> {
           (selectedCategory == _getSafeText('health') &&
               announcement.category == 'HEALTH') ||
           (selectedCategory == _getSafeText('general') &&
-              announcement.category == 'GENERAL');
+              announcement.category == 'GENERAL') ||
+          (selectedCategory == _getSafeText('id_claiming') &&
+              (announcement.category == 'ID' ||
+                  announcement.category == 'ID_CLAIMING'));
 
       return isWithinVisibilityWindow && matchesCategory;
     }).toList();
@@ -499,12 +522,14 @@ class _HomeScreenState extends State<HomeScreen> {
         print('Using Gemini TTS with Kore voice to speak: $textToSpeak');
         await geminiTts.speak(textToSpeak);
       } else {
-        print('Gemini TTS not initialized. Please configure your API key in settings.');
+        print(
+            'Gemini TTS not initialized. Please configure your API key in settings.');
         // Show a snackbar to inform the user
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Please configure your Gemini API key in settings to use voice features.'),
+              content: Text(
+                  'Please configure your Gemini API key in settings to use voice features.'),
               duration: Duration(seconds: 3),
             ),
           );
@@ -515,7 +540,8 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Voice feature temporarily unavailable. Please check your internet connection.'),
+            content: Text(
+                'Voice feature temporarily unavailable. Please check your internet connection.'),
             duration: Duration(seconds: 3),
           ),
         );
@@ -587,8 +613,8 @@ class _HomeScreenState extends State<HomeScreen> {
               Stack(
                 children: [
                   Container(
-                    width: 32,
-                    height: 32,
+                    width: _getSafeScaledIconSize(baseSize: 32.0),
+                    height: _getSafeScaledIconSize(baseSize: 32.0),
                     decoration: BoxDecoration(
                       color: categoryColor
                           .withOpacity(1.0)
@@ -604,7 +630,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Icon(
                         Announcement.getIconData(announcement.iconType),
                         color: Colors.white,
-                        size: 18,
+                        size: _getSafeScaledIconSize(baseSize: 18.0),
                       ),
                     ),
                   ),
@@ -737,7 +763,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Icon(
                           Icons.play_arrow,
                           color: Colors.white,
-                          size: 16,
+                          size: _getSafeScaledIconSize(baseSize: 16.0),
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -896,7 +922,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const Icon(
                 Icons.check_circle,
                 color: Colors.green,
-                size: 14,
+                size: 14, // Fixed size that won't scale with font
               ),
               const SizedBox(width: 4),
               Flexible(
@@ -974,10 +1000,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(width: 4),
-              const Icon(
+              Icon(
                 Icons.keyboard_arrow_down,
                 color: Colors.black87,
-                size: 18,
+                size: _getSafeScaledIconSize(baseSize: 18.0),
               ),
             ],
           ),
@@ -996,7 +1022,8 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.schedule, color: Colors.blue),
+                leading: Icon(Icons.schedule,
+                    color: Colors.blue, size: _getSafeScaledIconSize()),
                 title: Text(_getSafeText('one_hour_before')),
                 onTap: () async {
                   Navigator.of(context).pop();
@@ -1004,7 +1031,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.today, color: Colors.green),
+                leading: Icon(Icons.today,
+                    color: Colors.green, size: _getSafeScaledIconSize()),
                 title: Text(_getSafeText('one_day_before')),
                 onTap: () async {
                   Navigator.of(context).pop();
@@ -1012,7 +1040,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.date_range, color: Colors.orange),
+                leading: Icon(Icons.date_range,
+                    color: Colors.orange, size: _getSafeScaledIconSize()),
                 title: Text(_getSafeText('custom_time')),
                 onTap: () async {
                   Navigator.of(context).pop();

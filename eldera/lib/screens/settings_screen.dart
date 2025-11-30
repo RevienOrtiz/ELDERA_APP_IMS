@@ -6,11 +6,10 @@ import '../services/font_size_service.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 import '../services/language_service.dart';
-import '../services/calendar_integration_service.dart';
-import '../services/gemini_tts_service.dart';
 import '../models/user.dart' as app_user;
 import 'profile_screen.dart';
 import 'login_screen.dart';
+import 'change_password_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -27,10 +26,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   double _currentFontSize = 20.0;
   Uint8List? _selectedImage;
   app_user.User? _currentUser;
-  bool _calendarSyncEnabled = false;
   bool _useGeminiTts = true;
   bool _geminiTtsConfigured = false;
   final TextEditingController _apiKeyController = TextEditingController();
+  final GlobalKey<FormState> _changePasswordFormKey = GlobalKey<FormState>();
+  final TextEditingController _currentPasswordController =
+      TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+  bool _obscureCurrentPassword = true;
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
+  bool _isChangingPassword = false;
 
   @override
   void initState() {
@@ -50,8 +58,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _languageService.init();
     await _loadUserData();
     await _loadProfileImage();
-    await _loadCalendarSyncPreference();
-    await _loadGeminiTtsSettings();
   }
 
   Future<void> _loadFontSize() async {
@@ -143,6 +149,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
       isTitle: isTitle,
       isSubtitle: isSubtitle,
     );
+  }
+
+  double _getSafeScaledIconSize({
+    double baseSize = 24.0,
+    double scaleFactor = 1.0,
+  }) {
+    // Check if FontSizeService is properly initialized
+    if (!_fontSizeService.isInitialized) {
+      // Return default icon size if service not initialized
+      return baseSize * scaleFactor;
+    }
+
+    // Scale icon size based on font size
+    // Use a ratio of icon size to font size (24px icon for 20px font = 1.2 ratio)
+    double fontSizeRatio =
+        _fontSizeService.fontSize / _fontSizeService.defaultFontSize;
+    return baseSize * fontSizeRatio * scaleFactor;
   }
 
   String _getSafeText(String key) {
@@ -352,9 +375,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 12),
                     _buildLanguageItem(),
                     const SizedBox(height: 12),
-                    _buildCalendarSyncItem(),
-                    const SizedBox(height: 12),
-                    _buildGeminiTtsItem(),
+                    _buildChangePasswordEntryItem(),
                     const SizedBox(height: 12),
                     _buildLogoutItem(),
                     const SizedBox(height: 16), // Extra padding at bottom
@@ -400,7 +421,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Icon(
                   Icons.text_fields,
                   color: const Color(0xFF2E8B8B),
-                  size: 24,
+                  size: _getSafeScaledIconSize(),
                 ),
               ),
               const SizedBox(width: 16),
@@ -548,7 +569,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ),
-          // Action Button
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
@@ -649,6 +669,326 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildChangePasswordEntryItem() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade400, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.lock,
+              color: const Color(0xFF2E8B8B),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              _getSafeText('change_password'),
+              style: TextStyle(
+                fontSize: _getSafeScaledFontSize(isSubtitle: true),
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: _openChangePasswordScreen,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF00BFFF),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _getSafeText('change'),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: _getSafeScaledFontSize(baseSize: 0.7),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChangePasswordItem() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade400, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.lock,
+                  color: const Color(0xFF2E8B8B),
+                  size: _getSafeScaledIconSize(),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  _getSafeText('change_password'),
+                  style: TextStyle(
+                    fontSize: _getSafeScaledFontSize(isSubtitle: true),
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(),
+          const SizedBox(height: 12),
+          Form(
+            key: _changePasswordFormKey,
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _currentPasswordController,
+                  obscureText: _obscureCurrentPassword,
+                  decoration: InputDecoration(
+                    labelText: _getSafeText('current_password'),
+                    labelStyle: TextStyle(
+                      fontSize: _getSafeScaledFontSize(baseSize: 0.8),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureCurrentPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureCurrentPassword = !_obscureCurrentPassword;
+                        });
+                      },
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return _getSafeText('current_password');
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _newPasswordController,
+                  obscureText: _obscureNewPassword,
+                  decoration: InputDecoration(
+                    labelText: _getSafeText('new_password'),
+                    labelStyle: TextStyle(
+                      fontSize: _getSafeScaledFontSize(baseSize: 0.8),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureNewPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureNewPassword = !_obscureNewPassword;
+                        });
+                      },
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                  ),
+                  validator: (value) {
+                    final v = value?.trim() ?? '';
+                    if (v.isEmpty) {
+                      return _getSafeText('new_password');
+                    }
+                    if (v.length < 8) {
+                      return 'Minimum 8 characters';
+                    }
+                    final hasLetter = RegExp(r'[A-Za-z]').hasMatch(v);
+                    final hasNumber = RegExp(r'[0-9]').hasMatch(v);
+                    if (!hasLetter || !hasNumber) {
+                      return 'Include letters and numbers';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  obscureText: _obscureConfirmPassword,
+                  decoration: InputDecoration(
+                    labelText: _getSafeText('confirm_password'),
+                    labelStyle: TextStyle(
+                      fontSize: _getSafeScaledFontSize(baseSize: 0.8),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureConfirmPassword = !_obscureConfirmPassword;
+                        });
+                      },
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return _getSafeText('confirm_password');
+                    }
+                    if (value.trim() != _newPasswordController.text.trim()) {
+                      return 'Passwords do not match';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed:
+                        _isChangingPassword ? null : _handleChangePassword,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2E8B8B),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: _isChangingPassword
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(
+                            _getSafeText('change'),
+                            style: TextStyle(
+                              fontSize: _getSafeScaledFontSize(baseSize: 0.8),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleChangePassword() async {
+    final form = _changePasswordFormKey.currentState;
+    if (form == null) return;
+    if (!form.validate()) return;
+
+    setState(() {
+      _isChangingPassword = true;
+    });
+
+    final result = await AuthService.changePassword(
+      currentPassword: _currentPasswordController.text.trim(),
+      newPassword: _newPasswordController.text.trim(),
+      confirmPassword: _confirmPasswordController.text.trim(),
+    );
+
+    setState(() {
+      _isChangingPassword = false;
+    });
+
+    if (!mounted) return;
+
+    final success = result['success'] == true;
+    final message = result['message']?.toString() ??
+        (success
+            ? _getSafeText('password_changed')
+            : _getSafeText('password_change_failed'));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: success ? Colors.green : Colors.red,
+      ),
+    );
+
+    if (success) {
+      _currentPasswordController.clear();
+      _newPasswordController.clear();
+      _confirmPasswordController.clear();
+    }
+  }
+
   void _showLanguageSelectionDialog() {
     showDialog(
       context: context,
@@ -712,6 +1052,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _openChangePasswordScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ChangePasswordScreen(),
+      ),
+    );
+  }
+
   Future<void> _changeLanguage(String languageCode) async {
     await _languageService.setLanguage(languageCode);
     setState(() {});
@@ -733,133 +1082,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _loadCalendarSyncPreference() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _calendarSyncEnabled = prefs.getBool('calendar_sync_enabled') ?? false;
-    });
-  }
-
-  Future<void> _saveCalendarSyncPreference(bool enabled) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('calendar_sync_enabled', enabled);
-  }
-
-  Future<void> _loadGeminiTtsSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _useGeminiTts = prefs.getBool('use_gemini_tts') ?? true;
-      final apiKey = prefs.getString('gemini_api_key');
-      _geminiTtsConfigured = apiKey != null && apiKey.isNotEmpty;
-      if (_geminiTtsConfigured && apiKey != null) {
-        _apiKeyController.text = apiKey;
-      }
-    });
-  }
-
   Future<void> _saveGeminiTtsSettings() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('use_gemini_tts', _useGeminiTts);
     if (_apiKeyController.text.isNotEmpty) {
       await prefs.setString('gemini_api_key', _apiKeyController.text);
     }
-  }
-
-  Widget _buildCalendarSyncItem() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade400, width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Icon
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(
-              Icons.calendar_today,
-              color: Color(0xFF2E8B8B),
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Title and Description
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Calendar Sync',
-                  style: TextStyle(
-                    fontSize: _getSafeScaledFontSize(isSubtitle: true),
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Add events to device calendar',
-                  style: TextStyle(
-                    fontSize: _getSafeScaledFontSize(baseSize: 0.8),
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Toggle Switch
-          Switch(
-            value: _calendarSyncEnabled,
-            onChanged: (bool value) async {
-              setState(() {
-                _calendarSyncEnabled = value;
-              });
-              await _saveCalendarSyncPreference(value);
-
-              if (value) {
-                // Request calendar permissions when enabling
-                final calendarService = CalendarIntegrationService();
-                final hasPermission =
-                    await calendarService.requestCalendarPermissions();
-                if (!hasPermission) {
-                  // Revert the toggle if permission denied
-                  setState(() {
-                    _calendarSyncEnabled = false;
-                  });
-                  await _saveCalendarSyncPreference(false);
-
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                            'Calendar permission is required to sync events'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              }
-            },
-            activeColor: const Color(0xFF2E8B8B),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildGeminiTtsItem() {
@@ -912,13 +1140,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _geminiTtsConfigured 
-                          ? 'Premium voice enabled' 
+                      _geminiTtsConfigured
+                          ? 'Premium voice enabled'
                           : 'Configure API key to enable',
                       style: TextStyle(
                         fontSize: _getSafeScaledFontSize(baseSize: 0.8),
-                        color: _geminiTtsConfigured 
-                            ? Colors.green.shade600 
+                        color: _geminiTtsConfigured
+                            ? Colors.green.shade600
                             : Colors.orange.shade600,
                       ),
                     ),
@@ -928,12 +1156,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // Toggle Switch
               Switch(
                 value: _useGeminiTts && _geminiTtsConfigured,
-                onChanged: _geminiTtsConfigured ? (bool value) async {
-                  setState(() {
-                    _useGeminiTts = value;
-                  });
-                  await _saveGeminiTtsSettings();
-                } : null,
+                onChanged: _geminiTtsConfigured
+                    ? (bool value) async {
+                        setState(() {
+                          _useGeminiTts = value;
+                        });
+                        await _saveGeminiTtsSettings();
+                      }
+                    : null,
                 activeColor: const Color(0xFF2E8B8B),
               ),
             ],
@@ -985,7 +1215,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Gemini TTS configured successfully!'),
+                                  content: Text(
+                                      'Gemini TTS configured successfully!'),
                                   backgroundColor: Colors.green,
                                 ),
                               );
@@ -1074,7 +1305,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Icon(
               Icons.logout,
               color: Colors.grey.shade600,
-              size: 24,
+              size: _getSafeScaledIconSize(),
             ),
           ),
           const SizedBox(width: 16),
