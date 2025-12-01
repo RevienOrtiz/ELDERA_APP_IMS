@@ -8,6 +8,8 @@ import '../services/font_size_service.dart';
 import '../services/local_notification_service.dart';
 import '../services/language_service.dart';
 import '../services/gemini_tts_service.dart';
+import '../services/local_tts_service.dart';
+import '../config/environment_config.dart';
 import '../config/app_colors.dart';
 import '../utils/contrast_utils.dart';
 import '../services/accessibility_service.dart';
@@ -29,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final FontSizeService _fontSizeService = FontSizeService.instance;
   final LanguageService _languageService = LanguageService.instance;
   double _currentFontSize = 20.0;
+  late LocalTtsService localTts;
 
   @override
   void initState() {
@@ -116,10 +119,17 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _initializeGeminiTts() async {
     try {
       geminiTts = GeminiTtsService();
+      localTts = LocalTtsService();
 
-      // Get API key from SharedPreferences
+      // Prefer compile-time/env key; fallback to saved prefs
+      String? apiKey = await EnvironmentConfig.geminiApiKey;
       final prefs = await SharedPreferences.getInstance();
-      String? apiKey = prefs.getString('gemini_api_key');
+      if (apiKey == null || apiKey.isEmpty) {
+        apiKey = prefs.getString('gemini_api_key');
+      } else {
+        // Persist env key so future runs (without dart-define) still work
+        await prefs.setString('gemini_api_key', apiKey);
+      }
 
       if (apiKey == null || apiKey.isEmpty) {
         print(
@@ -131,6 +141,10 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Gemini TTS: Successfully initialized with Kore voice');
     } catch (e) {
       print('Gemini TTS: Failed to initialize: $e');
+      try {
+        await localTts.initialize();
+        print('Device TTS initialized as fallback');
+      } catch (_) {}
     }
   }
 
@@ -149,6 +163,16 @@ class _HomeScreenState extends State<HomeScreen> {
         announcements = eventAnnouncements;
         isLoading = false;
       });
+
+      // Prefetch TTS for top items to reduce play latency
+      if (geminiTts.isInitialized && announcements.isNotEmpty) {
+        final top = announcements.take(3).toList();
+        for (final a in top) {
+          final t = _composeSpeakText(a);
+          // Fire and forget
+          geminiTts.prefetch(t);
+        }
+      }
     } catch (e) {
       setState(() {
         errorMessage = e.toString();
@@ -512,9 +536,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _speakCardContent(Announcement announcement) async {
-    // Create the text to speak
-    String textToSpeak =
-        "${announcement.title}. ${LanguageService.instance.translateFreeText(announcement.what)}. Scheduled for ${announcement.when} at ${announcement.where}.";
+    final textToSpeak = _composeSpeakText(announcement);
 
     try {
       if (geminiTts.isInitialized) {
@@ -522,31 +544,36 @@ class _HomeScreenState extends State<HomeScreen> {
         print('Using Gemini TTS with Kore voice to speak: $textToSpeak');
         await geminiTts.speak(textToSpeak);
       } else {
-        print(
-            'Gemini TTS not initialized. Please configure your API key in settings.');
-        // Show a snackbar to inform the user
+        if (localTts.isInitialized) {
+          await localTts.speak(textToSpeak);
+          return;
+        }
+      }
+    } catch (e) {
+      print('Error during Gemini TTS speech: $e');
+      try {
+        await localTts.speak(textToSpeak);
+        return;
+      } catch (_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text(
-                  'Please configure your Gemini API key in settings to use voice features.'),
+              content: Text('Voice feature temporarily unavailable.'),
               duration: Duration(seconds: 3),
             ),
           );
         }
       }
-    } catch (e) {
-      print('Error during Gemini TTS speech: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'Voice feature temporarily unavailable. Please check your internet connection.'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
     }
+  }
+
+  String _composeSpeakText(Announcement announcement) {
+    String what = LanguageService.instance.translateFreeText(announcement.what);
+    // Trim overly long descriptions to speed TTS generation
+    if (what.length > 180) {
+      what = what.substring(0, 180) + '...';
+    }
+    return "${announcement.title}. $what. Scheduled for ${announcement.when} at ${announcement.where}.";
   }
 
   Future<void> _setReminder(

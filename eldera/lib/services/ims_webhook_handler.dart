@@ -31,7 +31,7 @@ class IMSWebhookHandler {
 
   /// Handle user profile update webhook
   static Future<Map<String, dynamic>> handleUserProfileUpdate(
-      Map<String, dynamic> payload, String signature) async {
+      Map<String, dynamic> payload, [String? signature]) async {
     try {
       // Verify webhook signature
       if (_webhookSecret != null) {
@@ -40,7 +40,8 @@ class IMSWebhookHandler {
         final digest = hmacSha256.convert(utf8.encode(payloadString));
         final calculatedSignature = digest.toString();
 
-        if (signature != calculatedSignature) {
+        final sig = signature ?? calculatedSignature;
+        if (sig != calculatedSignature) {
           return {'success': false, 'message': 'Invalid signature'};
         }
       }

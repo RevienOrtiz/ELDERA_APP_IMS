@@ -75,6 +75,25 @@ class EnvironmentConfig {
     }
   }
 
+  // Gemini TTS API Key
+  static Future<String?> get geminiApiKey async {
+    try {
+      await _loadSecureCredentials();
+      final stored = _secureCredentials?['gemini_api_key'];
+      if (stored != null && stored.isNotEmpty) {
+        return stored;
+      }
+
+      final fromEnv = const String.fromEnvironment(
+        'GEMINI_API_KEY',
+        defaultValue: '',
+      );
+      return fromEnv.isNotEmpty ? fromEnv : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   // Legacy IMS API Configurationq
   static String get imsApiBaseUrl {
     switch (_environment) {
