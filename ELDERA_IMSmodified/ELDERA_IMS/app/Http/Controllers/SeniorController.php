@@ -323,8 +323,14 @@ class SeniorController extends Controller
     {
         $senior = Senior::findOrFail($id);
         $photoUrl = null;
-        if (!empty($senior->photo_path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($senior->photo_path)) {
-            $photoUrl = asset('storage/' . $senior->photo_path);
+        if (!empty($senior->photo_path)) {
+            if (\Illuminate\Support\Facades\Storage::disk('private')->exists($senior->photo_path)) {
+                $photoUrl = route('seniors.photo', ['id' => $senior->id]);
+            } elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists($senior->photo_path)) {
+                $photoUrl = asset('storage/' . $senior->photo_path);
+            } else {
+                $photoUrl = asset('images/default-profile.png');
+            }
         } else {
             $photoUrl = asset('images/default-profile.png');
         }

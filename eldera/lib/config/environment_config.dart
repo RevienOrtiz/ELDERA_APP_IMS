@@ -60,16 +60,14 @@ class EnvironmentConfig {
         if (kIsWeb) {
           return const String.fromEnvironment(
             'API_URL_DEV',
-            defaultValue:
-                'http://192.168.18.182:8000', // Updated to match Laravel server IP
+            defaultValue: 'http://localhost:8000',
           );
         } else {
-          // For Android devices, use 10.0.2.2 which maps to host machine's localhost
-          // For physical devices, you may need to use your computer's actual IP address
+          // Android emulator maps 10.0.2.2 to host machine's localhost
+          // If using a physical device, override API_URL_DEV at build time
           return const String.fromEnvironment(
             'API_URL_DEV',
-            defaultValue:
-                'http://192.168.18.182:8000', // Updated to match Laravel server IP
+            defaultValue: 'http://10.0.2.2:8000',
           );
         }
     }

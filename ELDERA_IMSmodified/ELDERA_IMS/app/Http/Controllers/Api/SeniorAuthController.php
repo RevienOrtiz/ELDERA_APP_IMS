@@ -268,7 +268,7 @@ class SeniorAuthController extends Controller
                         ],
                         'has_pension' => $senior->has_pension,
                         'status' => $senior->status,
-                        'photo_path' => $senior->photo_path ? route('seniors.photo', $senior->id) : null,
+                        'photo_path' => $senior->photo_path ? route('api.seniors.photo', ['id' => $senior->id]) : null,
                     ]
                 ]);
             }
@@ -323,7 +323,7 @@ class SeniorAuthController extends Controller
                 ],
                 'has_pension' => $senior->has_pension,
                 'status' => $senior->status,
-                'photo_path' => $senior->photo_path,
+                'photo_path' => $senior->photo_path ? route('api.seniors.photo', ['id' => $senior->id]) : null,
             ]
         ]);
     }

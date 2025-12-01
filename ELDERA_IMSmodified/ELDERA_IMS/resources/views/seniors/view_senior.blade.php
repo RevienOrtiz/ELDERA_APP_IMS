@@ -37,7 +37,7 @@
                           <div class="col-md-2">
                               <div class="profile-photo-section" style="text-align: left;">
                                   @if($senior->photo_path)
-                                      <img src="{{ asset('storage/' . $senior->photo_path) }}" alt="Profile Photo" class="profile-photo" style="margin-left: 0;">
+                                      <img src="{{ route('seniors.photo', ['id' => $senior->id]) }}" alt="Profile Photo" class="profile-photo" style="margin-left: 0;">
                                   @else
                                       <div class="profile-photo-placeholder" style="width: 120px; height: 120px; background-color: #e9ecef; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; border-radius: 8px;">
                                           <i class="fas fa-user" style="font-size: 48px; color: #6c757d;"></i>

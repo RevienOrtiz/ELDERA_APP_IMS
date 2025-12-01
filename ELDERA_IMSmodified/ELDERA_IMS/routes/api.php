@@ -98,6 +98,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::put('/seniors/{id}', [App\Http\Controllers\Api\SeniorController::class, 'update']);
     Route::post('/seniors/{id}/documents', [App\Http\Controllers\Api\SeniorController::class, 'uploadDocument']);
     Route::get('/seniors/{id}/documents', [App\Http\Controllers\Api\SeniorController::class, 'getDocuments']);
+    Route::get('/seniors/{id}/photo', [App\Http\Controllers\SeniorController::class, 'servePhoto'])->name('api.seniors.photo');
     
     // Applications
     Route::post('/applications/id', [App\Http\Controllers\Api\ApplicationController::class, 'storeIdApplication']);
