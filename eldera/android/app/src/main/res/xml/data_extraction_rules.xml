@@ -2,6 +2,11 @@
 <data-extraction-rules>
     <!-- Cloud backup rules -->
     <cloud-backup>
+        <!-- Include all domains, then exclude sensitive subsets -->
+        <include domain="sharedpref" path="."/>
+        <include domain="file" path="."/>
+        <include domain="database" path="."/>
+        
         <!-- Exclude sensitive data from cloud backup -->
         <exclude domain="sharedpref" path="flutter.secure_storage"/>
         <exclude domain="sharedpref" path="auth_tokens"/>
@@ -9,8 +14,9 @@
         <exclude domain="database" path="secure.db"/>
         <exclude domain="file" path="keys/"/>
         <exclude domain="file" path="certificates/"/>
+        <exclude domain="file" path="cache/"/>
         
-        <!-- Include only non-sensitive app preferences -->
+        <!-- Keep non-sensitive app preferences available -->
         <include domain="sharedpref" path="app_preferences"/>
         <include domain="sharedpref" path="font_size_settings"/>
         <include domain="sharedpref" path="notification_settings"/>
@@ -18,6 +24,11 @@
     
     <!-- Device transfer rules -->
     <device-transfer>
+        <!-- Include all domains, then exclude sensitive subsets -->
+        <include domain="sharedpref" path="."/>
+        <include domain="file" path="."/>
+        <include domain="database" path="."/>
+        
         <!-- Exclude all sensitive data from device transfers -->
         <exclude domain="sharedpref" path="flutter.secure_storage"/>
         <exclude domain="sharedpref" path="auth_tokens"/>

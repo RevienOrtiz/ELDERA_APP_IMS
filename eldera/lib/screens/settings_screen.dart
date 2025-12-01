@@ -6,6 +6,7 @@ import '../services/font_size_service.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 import '../services/language_service.dart';
+import '../config/environment_config.dart';
 import '../models/user.dart' as app_user;
 import 'profile_screen.dart';
 import 'login_screen.dart';
@@ -26,9 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   double _currentFontSize = 20.0;
   Uint8List? _selectedImage;
   app_user.User? _currentUser;
-  bool _useGeminiTts = true;
   bool _geminiTtsConfigured = false;
-  final TextEditingController _apiKeyController = TextEditingController();
   final GlobalKey<FormState> _changePasswordFormKey = GlobalKey<FormState>();
   final TextEditingController _currentPasswordController =
       TextEditingController();
@@ -58,6 +57,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _languageService.init();
     await _loadUserData();
     await _loadProfileImage();
+    await _loadGeminiTtsPrefs();
   }
 
   Future<void> _loadFontSize() async {
@@ -184,6 +184,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Return default language name if service fails
       return 'English (US)';
     }
+  }
+
+  Future<void> _loadGeminiTtsPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final envKey = await EnvironmentConfig.geminiApiKey;
+      final apiKey = envKey ?? prefs.getString('gemini_api_key');
+      setState(() {
+        _geminiTtsConfigured = (apiKey != null && apiKey.isNotEmpty);
+      });
+    } catch (_) {}
   }
 
   String _getSafeCurrentLanguage() {
@@ -734,219 +745,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildChangePasswordItem() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade400, width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.lock,
-                  color: const Color(0xFF2E8B8B),
-                  size: _getSafeScaledIconSize(),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  _getSafeText('change_password'),
-                  style: TextStyle(
-                    fontSize: _getSafeScaledFontSize(isSubtitle: true),
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Divider(),
-          const SizedBox(height: 12),
-          Form(
-            key: _changePasswordFormKey,
-            child: Column(
-              children: [
-                TextFormField(
-                  controller: _currentPasswordController,
-                  obscureText: _obscureCurrentPassword,
-                  decoration: InputDecoration(
-                    labelText: _getSafeText('current_password'),
-                    labelStyle: TextStyle(
-                      fontSize: _getSafeScaledFontSize(baseSize: 0.8),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureCurrentPassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureCurrentPassword = !_obscureCurrentPassword;
-                        });
-                      },
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return _getSafeText('current_password');
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _newPasswordController,
-                  obscureText: _obscureNewPassword,
-                  decoration: InputDecoration(
-                    labelText: _getSafeText('new_password'),
-                    labelStyle: TextStyle(
-                      fontSize: _getSafeScaledFontSize(baseSize: 0.8),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureNewPassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureNewPassword = !_obscureNewPassword;
-                        });
-                      },
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                  ),
-                  validator: (value) {
-                    final v = value?.trim() ?? '';
-                    if (v.isEmpty) {
-                      return _getSafeText('new_password');
-                    }
-                    if (v.length < 8) {
-                      return 'Minimum 8 characters';
-                    }
-                    final hasLetter = RegExp(r'[A-Za-z]').hasMatch(v);
-                    final hasNumber = RegExp(r'[0-9]').hasMatch(v);
-                    if (!hasLetter || !hasNumber) {
-                      return 'Include letters and numbers';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _confirmPasswordController,
-                  obscureText: _obscureConfirmPassword,
-                  decoration: InputDecoration(
-                    labelText: _getSafeText('confirm_password'),
-                    labelStyle: TextStyle(
-                      fontSize: _getSafeScaledFontSize(baseSize: 0.8),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureConfirmPassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureConfirmPassword = !_obscureConfirmPassword;
-                        });
-                      },
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return _getSafeText('confirm_password');
-                    }
-                    if (value.trim() != _newPasswordController.text.trim()) {
-                      return 'Passwords do not match';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed:
-                        _isChangingPassword ? null : _handleChangePassword,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2E8B8B),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: _isChangingPassword
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Text(
-                            _getSafeText('change'),
-                            style: TextStyle(
-                              fontSize: _getSafeScaledFontSize(baseSize: 0.8),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Removed secondary duplicate stub
 
   Future<void> _handleChangePassword() async {
     final form = _changePasswordFormKey.currentState;
@@ -1082,198 +881,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _saveGeminiTtsSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('use_gemini_tts', _useGeminiTts);
-    if (_apiKeyController.text.isNotEmpty) {
-      await prefs.setString('gemini_api_key', _apiKeyController.text);
-    }
+  Future<void> _saveGeminiTtsSettings() async {}
+
+  // Deprecated: kept for compatibility but unused
+  Widget _buildChangePasswordItem() {
+    return const SizedBox.shrink();
   }
 
   Widget _buildGeminiTtsItem() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade400, width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              // Icon
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.record_voice_over,
-                  color: Color(0xFF2E8B8B),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              // Title and Description
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Kore Voice (Gemini TTS)',
-                      style: TextStyle(
-                        fontSize: _getSafeScaledFontSize(isSubtitle: true),
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _geminiTtsConfigured
-                          ? 'Premium voice enabled'
-                          : 'Configure API key to enable',
-                      style: TextStyle(
-                        fontSize: _getSafeScaledFontSize(baseSize: 0.8),
-                        color: _geminiTtsConfigured
-                            ? Colors.green.shade600
-                            : Colors.orange.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Toggle Switch
-              Switch(
-                value: _useGeminiTts && _geminiTtsConfigured,
-                onChanged: _geminiTtsConfigured
-                    ? (bool value) async {
-                        setState(() {
-                          _useGeminiTts = value;
-                        });
-                        await _saveGeminiTtsSettings();
-                      }
-                    : null,
-                activeColor: const Color(0xFF2E8B8B),
-              ),
-            ],
-          ),
-          if (!_geminiTtsConfigured) ...[
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Gemini API Key',
-                  style: TextStyle(
-                    fontSize: _getSafeScaledFontSize(baseSize: 0.9),
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _apiKeyController,
-                  decoration: InputDecoration(
-                    hintText: 'Enter your Gemini API key',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                  ),
-                  obscureText: true,
-                  style: TextStyle(
-                    fontSize: _getSafeScaledFontSize(baseSize: 0.8),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          if (_apiKeyController.text.isNotEmpty) {
-                            await _saveGeminiTtsSettings();
-                            setState(() {
-                              _geminiTtsConfigured = true;
-                            });
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'Gemini TTS configured successfully!'),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            }
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2E8B8B),
-                          foregroundColor: Colors.white,
-                        ),
-                        child: Text(
-                          'Save API Key',
-                          style: TextStyle(
-                            fontSize: _getSafeScaledFontSize(baseSize: 0.8),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    TextButton(
-                      onPressed: () {
-                        // Open help dialog or URL for getting API key
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Get Gemini API Key'),
-                            content: const Text(
-                              'To use the Kore voice, you need a Gemini API key:\n\n'
-                              '1. Visit Google AI Studio\n'
-                              '2. Create or sign in to your account\n'
-                              '3. Generate an API key\n'
-                              '4. Copy and paste it here',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('OK'),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                      child: Text(
-                        'Help',
-                        style: TextStyle(
-                          fontSize: _getSafeScaledFontSize(baseSize: 0.8),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
   Widget _buildLogoutItem() {

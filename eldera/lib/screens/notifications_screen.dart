@@ -240,8 +240,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return db.compareTo(da);
       });
 
+      // Keep only items posted within the last 30 days
+      final cutoff = DateTime.now().subtract(const Duration(days: 30));
+      final recent = loadedAnnouncements.where((a) {
+        final dt = _parsePostedDate(a.postedDate, whenForFallback: a.when);
+        return dt.isAfter(cutoff);
+      }).toList();
+
       setState(() {
-        announcements = loadedAnnouncements;
+        announcements = recent;
         isLoading = false;
       });
     } catch (e) {

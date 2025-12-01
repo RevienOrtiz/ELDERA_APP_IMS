@@ -375,6 +375,26 @@ class StatusSyncService {
     _lastSyncTimes[resourceKey] = DateTime.now();
   }
 
+  Future<bool> _forceSyncUsers() async {
+    await forceUserSync();
+    return true;
+  }
+
+  Future<bool> _forceSyncAnnouncements() async {
+    await forceAnnouncementSync();
+    return true;
+  }
+
+  Future<bool> _forceSyncReminders() async {
+    await forceReminderSync();
+    return true;
+  }
+
+  Future<bool> _forceSyncNotifications() async {
+    await forceNotificationSync();
+    return true;
+  }
+
   /// Force sync users from IMS API
   Future<void> forceUserSync() async {
     // Implementation pending IMS API integration

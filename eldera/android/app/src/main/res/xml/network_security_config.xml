@@ -2,19 +2,12 @@
 <network-security-config>
     <!-- Production configuration -->
     <domain-config cleartextTrafficPermitted="false">
-        <!-- Supabase domains -->
+        <!-- Production HTTPS domains -->
         <domain includeSubdomains="true">supabase.co</domain>
         <domain includeSubdomains="true">supabase.com</domain>
-        
-        <!-- IMS API domains -->
+        <domain includeSubdomains="true">eldera-osca.com</domain>
         <domain includeSubdomains="true">elderahealth.com</domain>
-        
-        <!-- Pin certificates for critical domains -->
-        <pin-set expiration="2025-12-31">
-            <!-- Supabase certificate pins (example - replace with actual) -->
-            <pin digest="SHA-256">AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</pin>
-            <pin digest="SHA-256">BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=</pin>
-        </pin-set>
+        <domain includeSubdomains="true">generativelanguage.googleapis.com</domain>
         
         <!-- Trust only system CAs -->
         <trust-anchors>
