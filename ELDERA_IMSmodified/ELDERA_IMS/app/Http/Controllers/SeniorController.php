@@ -329,21 +329,21 @@ class SeniorController extends Controller
             $photoUrl = asset('images/default-profile.png');
         }
 
-        $frontHtml = ViewFacade::make('reports.senior_id_card_lingayen_html', [
+        $frontHtml = ViewFacade::make('reports.seniorID_print', [
             'senior' => $senior,
             'side' => 'front',
             'preview' => false,
             'photoUrl' => $photoUrl,
         ])->render();
 
-        $backHtml = ViewFacade::make('reports.senior_id_card_lingayen_html', [
+        $backHtml = ViewFacade::make('reports.seniorID_print', [
             'senior' => $senior,
             'side' => 'back',
             'preview' => false,
             'photoUrl' => $photoUrl,
         ])->render();
 
-        return response()->view('reports.senior_id_card_wrapper', [
+        return response()->view('reports.seniorID_print_wrapper', [
             'frontHtml' => $frontHtml,
             'backHtml' => $backHtml,
             'title' => 'Senior ID Card — Lingayen (HTML)',

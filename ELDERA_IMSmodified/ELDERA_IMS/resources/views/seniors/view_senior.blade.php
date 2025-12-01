@@ -20,8 +20,8 @@
                               <button onclick="generatePDF()" class="action-btn pdf-btn">
                                   <i class="fas fa-file-pdf"></i> Generate PDF
                               </button>
-                              <a href="{{ route('seniors.id-card.lingayen.html', ['id' => $senior->id]) }}" class="action-btn print-btn" target="_blank">
-                                  <i class="fas fa-id-card"></i> HTML Template ID
+                              <a href="{{ route('seniors.id-card', ['id' => $senior->id]) }}" class="action-btn print-btn" target="_blank">
+                                  <i class="fas fa-id-card"></i> Print ID
                               </a>
 
                           </div>
@@ -714,10 +714,21 @@ $dependentsList = is_array($senior->dependent) && count($senior->dependent) > 0 
               color: white;
           }
 
-          .delete-btn:hover {
-              background-color: #c82333;
-              color: white;
-          }
+        .delete-btn:hover {
+            background-color: #c82333;
+            color: white;
+        }
+
+        .print-btn {
+            background-color: #0d6efd;
+            color: white;
+        }
+
+        .print-btn:hover {
+            background-color: #0b5ed7;
+            color: white;
+            text-decoration: none;
+        }
           
           @media (max-width: 768px) {
               .profile-photo {
