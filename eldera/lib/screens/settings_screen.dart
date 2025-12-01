@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
-import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/secure_storage_service.dart';
 import '../services/font_size_service.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
@@ -28,6 +30,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Uint8List? _selectedImage;
   app_user.User? _currentUser;
   bool _geminiTtsConfigured = false;
+  String? _authToken;
   final GlobalKey<FormState> _changePasswordFormKey = GlobalKey<FormState>();
   final TextEditingController _currentPasswordController =
       TextEditingController();
@@ -48,7 +51,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Reload profile image when screen becomes visible
     _loadProfileImage();
   }
 
@@ -56,6 +58,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _loadFontSize();
     await _languageService.init();
     await _loadUserData();
+    await _loadAuthToken();
     await _loadProfileImage();
     await _loadGeminiTtsPrefs();
   }
@@ -69,8 +72,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadUserData() async {
     try {
-      // Get current user from UserService
-      _currentUser = await UserService.getCurrentUser();
+      _currentUser = await AuthService.getCurrentUser();
+      if (_currentUser == null) {
+        _currentUser = await UserService.getCurrentUser();
+      }
 
       if (_currentUser == null) {
         // Show error message if user data couldn't be loaded
@@ -109,19 +114,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {});
   }
 
+  Future<void> _loadAuthToken() async {
+    try {
+      final token = await SecureStorageService.getAuthToken();
+      setState(() {
+        _authToken = token;
+      });
+    } catch (_) {}
+  }
+
   Future<void> _loadProfileImage() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final base64String = prefs.getString('profile_image');
-      if (base64String != null) {
-        final bytes = base64Decode(base64String);
-        setState(() {
-          _selectedImage = bytes;
-        });
+      if (kIsWeb) {
+        final url = _currentUser?.profileImageUrl;
+        if (url == null || url.isEmpty) return;
+        final token = _authToken ?? await SecureStorageService.getAuthToken();
+        if (token == null) return;
+        final resp = await http.get(
+          Uri.parse(url),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'image/*',
+          },
+        );
+        if (resp.statusCode == 200) {
+          setState(() {
+            _selectedImage = resp.bodyBytes;
+          });
+        }
+      } else {
+        final prefs = await SharedPreferences.getInstance();
+        final bytes = prefs.getString('profile_image');
+        if (bytes != null) {
+          setState(() {
+            _selectedImage = Uint8List.fromList(const []);
+          });
+        }
       }
-    } catch (e) {
-      print('Error loading profile image: $e');
-    }
+    } catch (_) {}
   }
 
   double _getSafeScaledFontSize({
@@ -261,50 +291,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             width: 60,
                             height: 60,
                           )
-                        : Container(
-                            color: const Color(0xFF2D5A5A),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                // Avatar illustration
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Color(0xFFE8B4A0), // Skin tone
-                                  ),
-                                ),
-                                // Hair
-                                Positioned(
-                                  top: 8,
-                                  child: Container(
-                                    width: 35,
-                                    height: 20,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFD3D3D3), // Gray hair
-                                      borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(18),
-                                        topRight: Radius.circular(18),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                // Mustache
-                                Positioned(
-                                  bottom: 12,
-                                  child: Container(
-                                    width: 15,
-                                    height: 4,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        : (_currentUser?.profileImageUrl != null
+                            ? Image.network(
+                                _currentUser!.profileImageUrl!,
+                                headers: _authToken != null
+                                    ? {'Authorization': 'Bearer $_authToken'}
+                                    : null,
+                                fit: BoxFit.cover,
+                                width: 60,
+                                height: 60,
+                              )
+                            : Container(
+                                color: const Color(0xFF2D5A5A),
+                              )),
                   ),
                 ),
                 const SizedBox(width: 16),

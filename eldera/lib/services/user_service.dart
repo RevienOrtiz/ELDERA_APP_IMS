@@ -34,7 +34,9 @@ class UserService {
           'id_status': (data['status'] ?? 'Senior Citizen').toString(),
           'is_dswd_pension_beneficiary': (data['has_pension'] is bool)
               ? data['has_pension']
-              : ((data['has_pension'] is num) ? data['has_pension'] != 0 : false),
+              : ((data['has_pension'] is num)
+                  ? data['has_pension'] != 0
+                  : false),
           'birth_date': data['date_of_birth']?.toString(),
           'address': _buildAddressString(
               (data['address'] is Map<String, dynamic>)

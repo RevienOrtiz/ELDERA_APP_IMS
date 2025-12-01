@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import '../services/font_size_service.dart';
 import '../services/user_service.dart';
 import '../services/auth_service.dart';
+import '../services/secure_storage_service.dart';
 import '../services/language_service.dart';
 import '../models/user.dart' as app_user;
 import 'admin_simulation_screen.dart';
@@ -27,6 +28,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Using UserService and AuthService
   Uint8List? _selectedImage; // Use Uint8List for both web and mobile
   app_user.User? _currentUser;
+  String? _authToken;
+
+  Future<void> _loadWebProfileImage() async {
+    if (!kIsWeb) return;
+    final url = _currentUser?.profileImageUrl;
+    if (url == null || url.isEmpty) return;
+    final token = _authToken ?? await SecureStorageService.getAuthToken();
+    if (token == null) return;
+    try {
+      final resp = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'image/*',
+        },
+      );
+      if (resp.statusCode == 200) {
+        setState(() {
+          _selectedImage = resp.bodyBytes;
+        });
+      }
+    } catch (_) {}
+  }
 
   Future<void> _saveProfileImage(Uint8List imageBytes, String fileName) async {
     try {
@@ -68,24 +92,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _loadProfileImage() async {
+  Future<void> _loadAuthToken() async {
     try {
-      if (_currentUser?.profileImageUrl != null) {
-        // Download image from storage
-        final result = await UserService.downloadProfileImage(
-          userId: _currentUser!.id,
-          imageUrl: _currentUser!.profileImageUrl!,
-        );
-
-        if (result['success']) {
-          setState(() {
-            _selectedImage = result['imageData'];
-          });
-        }
-      }
-    } catch (e) {
-      print('Error loading profile image: $e');
-    }
+      final token = await SecureStorageService.getAuthToken();
+      setState(() {
+        _authToken = token;
+      });
+    } catch (_) {}
   }
 
   Future<void> _pickImage() async {
@@ -190,7 +203,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       await _fontSizeService.init();
       await _languageService.init();
-      
+
       // Get current user via AuthService (uses IMS token and /senior/profile)
       print('ProfileScreen: Attempting to fetch user data...');
       _currentUser = await AuthService.getCurrentUser();
@@ -202,16 +215,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _currentUser = fallbackUser;
         }
       }
-      
+
       if (_currentUser != null) {
-        print('ProfileScreen: User data loaded successfully: ${_currentUser!.name}');
+        print(
+            'ProfileScreen: User data loaded successfully: ${_currentUser!.name}');
       } else {
         print('ProfileScreen: No user data returned from AuthService');
         // Show error message to user
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Unable to load profile data. Please try logging in again.'),
+              content: Text(
+                  'Unable to load profile data. Please try logging in again.'),
               backgroundColor: Colors.red,
               action: SnackBarAction(
                 label: 'Retry',
@@ -222,9 +237,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
         }
       }
-      
+
       setState(() {});
-      await _loadProfileImage();
+      await _loadAuthToken();
+      await _loadWebProfileImage();
     } catch (e) {
       print('ProfileScreen: Error initializing user data: $e');
       if (mounted) {
@@ -304,7 +320,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     // Scale icon size based on font size
     // Use a ratio of icon size to font size (24px icon for 20px font = 1.2 ratio)
-    double fontSizeRatio = _fontSizeService.fontSize / _fontSizeService.defaultFontSize;
+    double fontSizeRatio =
+        _fontSizeService.fontSize / _fontSizeService.defaultFontSize;
     return baseSize * fontSizeRatio * scaleFactor;
   }
 
@@ -357,84 +374,99 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 width: 120,
                                 height: 120,
                               )
-                            : Container(
-                                color: const Color(0xFF2D5A5A),
-                                child: Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    // Avatar illustration
-                                    Container(
-                                      width: 80,
-                                      height: 80,
-                                      decoration: const BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: Color(0xFFE8B4A0), // Skin tone
-                                      ),
-                                    ),
-                                    // Hair
-                                    Positioned(
-                                      top: 15,
-                                      child: Container(
-                                        width: 70,
-                                        height: 40,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFFD3D3D3), // Gray hair
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(35),
-                                            topRight: Radius.circular(35),
+                            : (_currentUser?.profileImageUrl != null
+                                ? Image.network(
+                                    _currentUser!.profileImageUrl!,
+                                    headers: _authToken != null
+                                        ? {
+                                            'Authorization':
+                                                'Bearer $_authToken'
+                                          }
+                                        : null,
+                                    fit: BoxFit.cover,
+                                    width: 120,
+                                    height: 120,
+                                    errorBuilder: (context, error, stack) {
+                                      return Container(
+                                        color: const Color(0xFF2D5A5A),
+                                      );
+                                    },
+                                  )
+                                : Container(
+                                    color: const Color(0xFF2D5A5A),
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        Container(
+                                          width: 80,
+                                          height: 80,
+                                          decoration: const BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Color(0xFFE8B4A0),
                                           ),
                                         ),
-                                      ),
-                                    ),
-                                    // Mustache
-                                    Positioned(
-                                      bottom: 25,
-                                      child: Container(
-                                        width: 30,
-                                        height: 8,
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius:
-                                              BorderRadius.circular(4),
-                                        ),
-                                      ),
-                                    ),
-                                    // Green shirt
-                                    Positioned(
-                                      bottom: 0,
-                                      child: Container(
-                                        width: 80,
-                                        height: 30,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFF4CAF50),
-                                          borderRadius: BorderRadius.only(
-                                            bottomLeft: Radius.circular(40),
-                                            bottomRight: Radius.circular(40),
+                                        Positioned(
+                                          top: 15,
+                                          child: Container(
+                                            width: 70,
+                                            height: 40,
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFFD3D3D3),
+                                              borderRadius: BorderRadius.only(
+                                                topLeft: Radius.circular(35),
+                                                topRight: Radius.circular(35),
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ),
-                                    // Camera icon overlay
-                                    Positioned(
-                                      bottom: 5,
-                                      right: 5,
-                                      child: Container(
-                                        width: 24,
-                                        height: 24,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFF4CAF50),
-                                          shape: BoxShape.circle,
+                                        Positioned(
+                                          bottom: 25,
+                                          child: Container(
+                                            width: 30,
+                                            height: 8,
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                            ),
+                                          ),
                                         ),
-                                        child: Icon(
-                                          Icons.camera_alt,
-                                          color: Colors.white,
-                                          size: _getSafeScaledIconSize(baseSize: 16.0),
+                                        Positioned(
+                                          bottom: 0,
+                                          child: Container(
+                                            width: 80,
+                                            height: 30,
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFF4CAF50),
+                                              borderRadius: BorderRadius.only(
+                                                bottomLeft: Radius.circular(40),
+                                                bottomRight:
+                                                    Radius.circular(40),
+                                              ),
+                                            ),
+                                          ),
                                         ),
-                                      ),
+                                        Positioned(
+                                          bottom: 5,
+                                          right: 5,
+                                          child: Container(
+                                            width: 24,
+                                            height: 24,
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFF4CAF50),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(
+                                              Icons.camera_alt,
+                                              color: Colors.white,
+                                              size: _getSafeScaledIconSize(
+                                                  baseSize: 16.0),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ),
+                                  )),
                       ),
                     ),
                   ),
