@@ -106,8 +106,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/Seniors/pension', [SeniorController::class, 'pension'])->name('seniors.pension');
     Route::get('/Seniors/id-applications', [SeniorController::class, 'idApplications'])->name('seniors.id-applications');
     
-    // Senior ID Card (Lingayen)
-Route::get('/Seniors/{id}/id-card/lingayen/html', [SeniorController::class, 'printLingayenIdCardHtml'])->name('seniors.id-card.lingayen.html');
+    // Senior ID Card
+    Route::get('/Seniors/{id}/id-card', [SeniorController::class, 'printLingayenIdCardHtml'])->name('seniors.id-card');
 
     //Forms
     Route::get('/Form_existing_senior', function () {
