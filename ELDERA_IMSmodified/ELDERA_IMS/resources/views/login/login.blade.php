@@ -101,6 +101,27 @@
         margin-left: 1.5rem;
     }
 
+    .login-form .input-group {
+        border: 1px solid #e31575;
+        border-radius: 6px;
+        overflow: hidden;
+        background: #fff;
+    }
+
+    .input-group .form-input {
+        margin-left: 0;
+        border: none;
+        border-radius: 0;
+        border-left: none;
+    }
+
+    .login-form .input-group-text {
+        border: none;
+        border-radius: 0;
+        background-color: #e31575;
+        color: #fff;
+    }
+
     .forgot-password {
         color: #1a237e;
         font-size: clamp(0.9rem, 2vw, 1rem);
@@ -122,6 +143,11 @@
         z-index: 10;
         transition: all 0.3s ease;
         padding: 5px;
+    }
+
+    input[type="password"]::-ms-reveal,
+    input[type="password"]::-ms-clear {
+        display: none;
     }
 
     .password-toggle-inline:hover {

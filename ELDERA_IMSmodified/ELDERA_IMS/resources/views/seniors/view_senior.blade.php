@@ -47,7 +47,10 @@
                           </div>
                           <div class="col-md-10">
                               <div class="profile-info-section" style="padding-left: px;">
-                                  <h4 class="senior-name mb-1" style="text-align: left;">{{ $senior->last_name }}, {{ $senior->first_name }}</h4>
+                                  @php
+                                      $fullDisplayName = trim($senior->last_name . ', ' . $senior->first_name . ' ' . ($senior->middle_name ? $senior->middle_name . ' ' : '') . ($senior->name_extension ?? ''));
+                                  @endphp
+                                  <h4 class="senior-name mb-1" style="text-align: left;">{{ $fullDisplayName }}</h4>
                                   <p class="senior-id mb-2" style="text-align: left;">{{ $senior->osca_id }}</p>
                                
                                       <span class="status-badge badge-active">{{ $senior->status ?? 'Active' }}</span>
@@ -69,7 +72,7 @@
                                   <div class="info-content">
                                       <div class="info-row">
                                           <span class="info-label">Full Name:</span>
-                                          <span class="info-value">{{ $senior->first_name }} {{ $senior->middle_name ?? '' }} {{ $senior->last_name }}</span>
+                                          <span class="info-value">{{ $fullDisplayName }}</span>
                                       </div>
                                       <div class="info-row">
                                           <span class="info-label">Age:</span>

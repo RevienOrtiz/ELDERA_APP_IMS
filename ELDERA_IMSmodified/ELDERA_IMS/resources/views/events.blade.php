@@ -296,10 +296,11 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 12px 24px;
-            background: #1f2937;
-            color: #ffffff;
-            min-height: 64px;
+            padding: 18px 24px;
+            background: linear-gradient(135deg, #ffb7ce 0%, #ff9bb8 100%);
+            color: #2c3e50;
+            min-height: 68px;
+            border-bottom: 3px solid #e31575;
         }
 
         .header-left {
@@ -322,7 +323,7 @@
             padding: 8px;
             border-radius: 4px;
             transition: all 0.2s;
-            color: #e5e7eb;
+            color: #2c3e50;
             width: 40px;
             height: 40px;
             display: flex;
@@ -331,8 +332,8 @@
         }
         
         .nav-btn:hover {
-            background: rgba(255, 255, 255, 0.12);
-            color: #ffffff;
+            background: rgba(255, 255, 255, 0.25);
+            color: #2c3e50;
         }
         
         .today-btn {
@@ -361,9 +362,10 @@
         
         .calendar-title {
             font-size: 22px;
-            font-weight: 400;
-            color: #ffffff;
+            font-weight: 700;
+            color: #2c3e50;
             margin-left: 8px;
+            letter-spacing: 0.2px;
         }
         
         .calendar-controls {

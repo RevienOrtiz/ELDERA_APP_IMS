@@ -2,37 +2,77 @@
 <x-header title="Password Reset Requests" icon="fas fa-key">
     <style>
         .main-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #f8f9fa;
-            min-height: calc(100vh - 80px);
-            margin-left: 280px;
-            margin-top: 80px;
+            margin-left: 250px;
+            margin-top: 60px;
+            height: calc(100vh - 60px);
+            min-height: calc(100vh - 60px);
+            padding: 0;
+            background: #f3f4f6;
+            overflow: hidden;
         }
 
         .page-header {
-            background: #e31575;
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, #ffb7ce 0%, #ff9bb8 100%);
+            color: #2c3e50;
+            padding: 18px 24px;
+            border-radius: 0;
+            margin: 0;
+            box-shadow: 0 4px 12px rgba(227, 21, 117, 0.15);
+            border-bottom: 3px solid #e31575;
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            width: 100%;
+            min-height: 68px;
         }
 
         .page-title {
-            font-size: 2rem;
-            font-weight: 600;
+            font-size: 1.4rem;
+            font-weight: 700;
             margin: 0;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
 
         .page-subtitle {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            margin-top: 10px;
+            font-size: .95rem;
+            opacity: .9;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sub-toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #1f2937;
+            padding: 12px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #111827;
+        }
+        .toolbar-stats { display: flex; align-items: center; gap: 16px; color: #e5e7eb; }
+        .toolbar-stat-label { font-weight: 600; margin-right: 6px; }
+        .toolbar-stat-value { font-weight: 800; color: #fff; }
+
+        .table-search { display: flex; align-items: center; gap: 8px; }
+        .toolbar-search-wrap { width: clamp(240px, 40vw, 360px); display: flex; align-items: center; gap: 10px; background: #d9d9d9; border-radius: 14px; padding: 6px 10px 6px 12px; box-shadow: inset 0 -1px 0 rgba(0,0,0,0.25), inset 0 8px 12px rgba(0,0,0,0.15); }
+        .search-icon { color: #111827; font-size: 18px; }
+        .toolbar-search-input { flex: 1; border: none; background: transparent; font-weight: 400; font-size: 16px; color: #111827; outline: none; }
+        .toolbar-search-input::placeholder { color: #111827; opacity: 0.85; font-weight: 400; }
+        .search-close { border: none; background: transparent; color: #111827; font-size: 24px; line-height: 1; cursor: pointer; padding: 0 6px; }
+        .clear-btn {
+            border: none;
+            background: transparent;
+            font-size: 18px;
+            cursor: pointer;
+            color: #6b7280;
         }
 
         .filters-section {
@@ -100,26 +140,29 @@
 
         .requests-table-container {
             background: white;
-            border-radius: 15px;
+            border-radius: 0;
             overflow: hidden;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-            border: 1px solid #e9ecef;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.06);
         }
 
         .table-header {
-            background: #f8f9fa;
-            padding: 20px 25px;
-            border-bottom: 1px solid #e9ecef;
+            background: #f8fafc;
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .table-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #2c3e50;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #374151;
             margin: 0;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .requests-table {
@@ -127,21 +170,32 @@
             border-collapse: collapse;
         }
 
+        .table-scroll {
+            max-height: calc(100vh - 260px);
+            overflow-y: auto;
+        }
+
+        .requests-table thead th {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 1;
+        }
+
         .requests-table th {
-            background: #f8f9fa;
-            padding: 15px 20px;
+            background: #fff;
+            padding: 12px 16px;
             text-align: left;
             font-weight: 600;
-            color: #2c3e50;
-            border-bottom: 2px solid #e9ecef;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            color: #4b5563;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 0.8rem;
+            letter-spacing: 0.4px;
         }
 
         .requests-table td {
-            padding: 18px 20px;
-            border-bottom: 1px solid #f1f3f4;
+            padding: 14px 16px;
+            border-bottom: 1px solid #f3f4f6;
             vertical-align: middle;
         }
 
@@ -150,31 +204,14 @@
         }
 
         .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
         }
-
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
-        .status-approved {
-            background: #d1edff;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-
-        .status-rejected {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
+        .status-pending { background: #fff7db; color: #7c6a00; }
+        .status-approved { background: #dbeafe; color: #1e40af; }
+        .status-rejected { background: #fee2e2; color: #991b1b; }
 
         .action-buttons {
             display: flex;
@@ -289,13 +326,18 @@
     </style>
 
     <div class="main-container">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-title">
-                <i class="fas fa-key"></i>
-                Password Reset Requests
+                Recovery Requests
             </h1>
-            <p class="page-subtitle">Manage password reset requests from senior citizens</p>
+            @php
+                $totalCount = \App\Models\PasswordResetRequest::count();
+            @endphp
+            <div class="page-subtitle">
+                <span>Admin Console</span>
+                <span>•</span>
+                <span>Total {{ $totalCount }}</span>
+            </div>
         </div>
 
         <!-- Success/Error Messages -->
@@ -313,46 +355,42 @@
             </div>
         @endif
 
-        <!-- Filters Section -->
-        <div class="filters-section">
-            <form method="GET" action="{{ route('admin.password-reset-requests.index') }}">
-                <div class="filters-row">
-                    <div class="filter-group">
-                        <label class="filter-label">Status</label>
-                        <select name="status" class="filter-select">
-                            <option value="all" {{ request('status') == 'all' ? 'selected' : '' }}>All Statuses</option>
-                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
-                            <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label class="filter-label">Search</label>
-                        <input type="text" name="search" class="filter-input" 
-                               placeholder="OSCA ID or Name" 
-                               value="{{ request('search') }}">
-                    </div>
-                    <div class="filter-group">
-                        <button type="submit" class="filter-btn">
-                            <i class="fas fa-search"></i>
-                            Filter
-                        </button>
-                    </div>
-                </div>
-            </form>
+        @php
+            $pendingCount = \App\Models\PasswordResetRequest::where('status','pending')->count();
+            $approvedCount = \App\Models\PasswordResetRequest::where('status','approved')->count();
+            $rejectedCount = \App\Models\PasswordResetRequest::where('status','rejected')->count();
+        @endphp
+        <div class="sub-toolbar">
+            <div class="toolbar-stats">
+                <div class="toolbar-stat"><span class="toolbar-stat-label">Pending:</span><span class="toolbar-stat-value">{{ $pendingCount }}</span></div>
+                <div class="toolbar-stat"><span class="toolbar-stat-label">Approved:</span><span class="toolbar-stat-value">{{ $approvedCount }}</span></div>
+                <div class="toolbar-stat"><span class="toolbar-stat-label">Rejected:</span><span class="toolbar-stat-value">{{ $rejectedCount }}</span></div>
+            </div>
+            <div class="table-search" style="margin-left:auto;">
+                <form method="GET" action="{{ route('admin.password-reset-requests.index') }}" class="toolbar-search-wrap">
+                    <i class="fas fa-search search-icon" aria-hidden="true"></i>
+                    <input type="text" name="search" class="toolbar-search-input" placeholder="Search OSCA ID or Name" value="{{ request('search') }}" aria-label="Search OSCA ID or Name">
+                    @if(request('search'))
+                        <button type="button" onclick="window.location.href='{{ route('admin.password-reset-requests.index', array_filter(['status' => request('status')])) }}'" class="search-close">&times;</button>
+                    @endif
+                </form>
+            </div>
         </div>
 
         <!-- Requests Table -->
         <div class="requests-table-container">
-            <div class="table-header">
-                <h2 class="table-title">
-                    <i class="fas fa-list"></i>
-                    Password Reset Requests ({{ $requests->total() }} Total)
-                </h2>
-            </div>
-
             @if($requests->count() > 0)
+                <div class="table-scroll">
                 <table class="requests-table">
+                    <colgroup>
+                        <col style="width:10%">
+                        <col style="width:14%">
+                        <col style="width:36%">
+                        <col style="width:12%">
+                        <col style="width:14%">
+                        <col style="width:14%">
+                        <col style="width:16%">
+                    </colgroup>
                     <thead>
                         <tr>
                             <th>Request ID</th>
@@ -441,6 +479,7 @@
                         @endforeach
                     </tbody>
                 </table>
+                </div>
 
                 <!-- Pagination -->
                 <div class="pagination-wrapper">
