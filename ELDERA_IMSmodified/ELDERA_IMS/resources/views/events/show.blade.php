@@ -25,14 +25,17 @@
                         <h1 class="event-title">{{ $event->title }}</h1>
                     </div>
                     <div class="header-right">
-                        @if($event->status === 'upcoming')
-                            <a href="#" class="edit-btn" id="openEditModalBtn">
-                                <i class="fas fa-edit"></i> Edit Event
-                            </a>
-                        @endif
                         <a href="{{ route('events.participants', $event->id) }}" class="participants-btn">
                             <i class="fas fa-users"></i> Manage Participants
                         </a>
+                        @if($event->status === 'upcoming')
+                            <a href="#" class="icon-btn" id="openEditModalBtn" title="Edit Event" aria-label="Edit Event">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        @endif
+                        <button class="icon-btn icon-danger" onclick="deleteEvent('{{ $event->id }}')" title="Delete Event" aria-label="Delete Event">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -84,7 +87,7 @@
                                 <i class="fas fa-align-left"></i>
                                 Description
                             </h3>
-                            <div class="description-content">
+                            <div class="description-content" style="background:#fbf7f2;border:1px solid #ececec;border-radius:12px;padding:16px;box-shadow:0 1px 2px rgba(17,24,39,0.06);color:#111827;font-weight:500;">
                                 {{ $event->description }}
                             </div>
                         </div>
@@ -104,103 +107,7 @@
                         @endif
                     </div>
 
-                    <div class="content-right">
-                        <!-- Participants -->
-                        <div class="participants-section">
-                            <h3 class="section-title">
-                                <i class="fas fa-users"></i>
-                                Participants
-                            </h3>
-                            <div class="participants-stats">
-                                <div class="stat-item">
-                                    <span class="stat-number">{{ $event->current_participants }}</span>
-                                    <span class="stat-label">Registered</span>
-                                </div>
-                                @if($event->max_participants)
-                                <div class="stat-item">
-                                    <span class="stat-number">{{ $event->max_participants }}</span>
-                                    <span class="stat-label">Max Capacity</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-number">{{ $event->available_slots }}</span>
-                                    <span class="stat-label">Available</span>
-                                </div>
-                                @else
-                                <div class="stat-item">
-                                    <span class="stat-number">∞</span>
-                                    <span class="stat-label">Unlimited</span>
-                                </div>
-                                @endif
-                            </div>
-
-                            @if($event->participants->count() > 0)
-                            <div class="participants-list">
-                                <h4>Registered Participants</h4>
-                                <div class="participants-grid">
-                                    @foreach($event->participants as $participant)
-                                    <div class="participant-item">
-                                        <div class="participant-info">
-                                            <strong>{{ $participant->first_name }} {{ $participant->last_name }}</strong>
-                                            <small>{{ $participant->osca_id }}</small>
-                                        </div>
-                                        <div class="participant-status">
-                                            @if($participant->pivot->attended)
-                                                <span class="status-attended">
-                                                    <i class="fas fa-check-circle"></i> Attended
-                                                </span>
-                                            @else
-                                                <span class="status-registered">
-                                                    <i class="fas fa-clock"></i> Registered
-                                                </span>
-                                            @endif
-                                        </div>
-                                    </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                            @else
-                            <div class="no-participants">
-                                <i class="fas fa-users-slash"></i>
-                                <p>No participants registered yet</p>
-                            </div>
-                            @endif
-                        </div>
-
-                        <!-- Event Actions -->
-                        <div class="actions-section">
-                            <h3 class="section-title">
-                                <i class="fas fa-cogs"></i>
-                                Event Actions
-                            </h3>
-                            <div class="action-buttons">
-                                @if($event->status === 'upcoming')
-                                    <button class="action-btn ongoing-btn" onclick="updateEventStatus('{{ $event->id }}', 'ongoing')">
-                                        <i class="fas fa-play"></i>
-                                        Mark as Ongoing
-                                    </button>
-                                @endif
-                                
-                                @if($event->status === 'ongoing')
-                                    <button class="action-btn complete-btn" onclick="updateEventStatus('{{ $event->id }}', 'completed')">
-                                        <i class="fas fa-check"></i>
-                                        Mark as Completed
-                                    </button>
-                                @endif
-                                
-                                {{-- @if(in_array($event->status, ['upcoming', 'ongoing']))
-                                    <button class="action-btn cancel-btn" onclick="updateEventStatus('{{ $event->id }}', 'cancelled')">
-                                        <i class="fas fa-times"></i>
-                                        Cancel Event
-                                    </button>
-                                @endif --}}
-                                
-                                <button class="action-btn delete-btn" onclick="deleteEvent('{{ $event->id }}')">
-                                    <i class="fas fa-trash"></i>
-                                    Delete Event
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="content-right"></div>
                 </div>
             </div>
         </div>
@@ -348,56 +255,62 @@
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             }
 
+            .icon-btn {
+                color: #ffffff;
+                text-decoration: none;
+                width: 36px;
+                height: 36px;
+                border: 1px solid rgba(255, 255, 255, 0.35);
+                border-radius: 50%;
+                transition: all 0.2s ease;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: var(--accent-btn);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                font-size: 16px;
+            }
+            .icon-btn.icon-danger { background: #dc3545; border-color: rgba(255,255,255,0.35); }
+            .icon-btn:hover { background: var(--accent-2); color: #ffffff; }
+            .icon-btn.icon-danger:hover { background: #c82333; }
+
             .event-content {
                 display: grid;
-                grid-template-columns: 2fr 1fr;
+                grid-template-columns: 1fr;
                 gap: 32px;
                 padding: 32px;
-                flex: 1;               /* take remaining height */
-                min-height: 0;          /* allow vertical scrolling */
-                overflow-y: auto;       /* scroll bar below header */
+                flex: 1;
+                min-height: 0;
+                overflow-y: auto;
             }
 
-            .info-section {
-                margin-bottom: 28px;
-            }
+            .info-section { margin-bottom: 24px; }
 
             .section-title {
-                color: #c01060;
+                color: #374151;
                 font-size: 18px;
                 font-weight: 700;
-                margin-bottom: 18px;
-                padding-bottom: 12px;
-                border-bottom: 2px solid #eef2f7;
+                margin-bottom: 12px;
+                padding-bottom: 10px;
+                border-bottom: 1px solid #e5e7eb;
                 display: flex;
                 align-items: center;
                 gap: 10px;
-                letter-spacing: 0.2px;
+                letter-spacing: 0.1px;
             }
 
-            .info-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                gap: 18px;
-            }
+            .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 
             .info-item {
-                background: #ffffff;
-                padding: 18px;
-                border-radius: 10px;
-                border: 1px solid #e5e7eb;
-                box-shadow: 0 2px 8px rgba(17, 24, 39, 0.05);
-                border-left: 4px solid #e31575;
+                background: #fbf7f2;
+                padding: 16px;
+                border-radius: 12px;
+                border: 1px solid #ececec;
+                box-shadow: 0 1px 2px rgba(17, 24, 39, 0.06);
             }
 
-            .info-item label {
-                display: block;
-                font-weight: 600;
-                color: #6b7280;
-                margin-bottom: 6px;
-                font-size: 13px;
-                letter-spacing: 0.2px;
-            }
+            .info-item label { display: block; font-weight: 700; color: #6b7280; margin-bottom: 6px; font-size: 13px; letter-spacing: 0.1px; }
+            .info-value { font-weight: 600; color: #111827; }
 
             .info-value {
                 display: flex;

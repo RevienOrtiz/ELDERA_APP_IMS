@@ -1,32 +1,41 @@
 <x-sidebar>
 <x-header title="Password Reset Request Details" icon="fas fa-key">
+    @include('message.popup_message')
     <style>
         .main-container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #f8f9fa;
-            min-height: calc(100vh - 80px);
-            margin-left: 280px;
-            margin-top: 80px;
+            margin-left: 250px;
+            margin-top: 60px;
+            height: calc(100vh - 60px);
+            min-height: calc(100vh - 60px);
+            padding: 0;
+            background: #f3f4f6;
+            overflow: auto;
         }
 
         .page-header {
-            background: #e31575;
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, #ffb7ce 0%, #ff9bb8 100%);
+            color: #2c3e50;
+            padding: 18px 24px;
+            border-radius: 0;
+            margin: 0;
+            box-shadow: 0 4px 12px rgba(227, 21, 117, 0.15);
+            border-bottom: 3px solid #e31575;
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            width: 100%;
+            min-height: 68px;
         }
 
         .page-title {
-            font-size: 2rem;
-            font-weight: 600;
+            font-size: 1.4rem;
+            font-weight: 700;
             margin: 0;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
 
         .back-link {
@@ -45,12 +54,12 @@
         }
 
         .request-details-card {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 25px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-            border: 1px solid #e9ecef;
+            background: #ffffff;
+            border-radius: 0;
+            padding: 24px;
+            margin: 0;
+            box-shadow: 0 2px 8px rgba(17, 24, 39, 0.05);
+            border: 1px solid #e5e7eb;
         }
 
         .card-title {
@@ -65,31 +74,32 @@
 
         .details-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
         }
 
         .detail-item {
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid #e31575;
+            padding: 16px;
+            background: #fbf7f2;
+            border-radius: 12px;
+            border: 1px solid #ececec;
+            box-shadow: 0 1px 2px rgba(17, 24, 39, 0.06);
         }
 
         .detail-label {
             font-size: 0.85rem;
-            font-weight: 600;
-            color: #6c757d;
+            font-weight: 700;
+            color: #6b7280;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 5px;
+            letter-spacing: 0.1px;
+            margin-bottom: 6px;
         }
 
         .detail-value {
-            font-size: 1.1rem;
-            font-weight: 500;
-            color: #2c3e50;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
         }
 
         .status-badge {
@@ -121,11 +131,12 @@
         }
 
         .actions-section {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-            border: 1px solid #e9ecef;
+            background: #ffffff;
+            border-radius: 0;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(17, 24, 39, 0.05);
+            border: 1px solid #e5e7eb;
+            margin: 0;
         }
 
         .actions-grid {
@@ -222,7 +233,7 @@
             padding: 20px;
             border-radius: 10px;
             text-align: center;
-            margin-bottom: 20px;
+            margin: 16px 0;
             border: 1px solid #bee5eb;
         }
 
@@ -291,13 +302,6 @@
     </style>
 
     <div class="main-container">
-        <!-- Page Header -->
-        <div class="page-header">
-            <h1 class="page-title">
-                <i class="fas fa-key"></i>
-                Password Reset Request #{{ $passwordResetRequest->id }}
-            </h1>
-        </div>
 
         <!-- Success/Error Messages -->
         @if(session('success'))
@@ -396,10 +400,10 @@
                             Mark this request as approved. The admin can then proceed to update the password in APP ACCOUNT.
                         </div>
                         
-                        <form method="POST" action="{{ route('admin.password-reset-requests.approve', $passwordResetRequest) }}" class="action-form">
+                        <form id="approveForm" method="POST" action="{{ route('admin.password-reset-requests.approve', $passwordResetRequest) }}" class="action-form">
                             @csrf
                             <textarea name="notes" class="notes-input" placeholder="Optional notes (e.g., password updated, user contacted, etc.)"></textarea>
-                            <button type="submit" class="action-btn" onclick="return confirm('Are you sure you want to approve this password reset request?')">
+                            <button type="button" class="action-btn" onclick="window.confirmFormId='approveForm'; showConfirmModal('Approve Request', 'Are you sure you want to approve this password reset request?', document.getElementById('approveForm').action, 'POST');">
                                 <i class="fas fa-check"></i>
                                 Approve Request
                             </button>
@@ -416,10 +420,10 @@
                             Mark this request as rejected if it's invalid or cannot be processed.
                         </div>
                         
-                        <form method="POST" action="{{ route('admin.password-reset-requests.reject', $passwordResetRequest) }}" class="action-form">
+                        <form id="rejectForm" method="POST" action="{{ route('admin.password-reset-requests.reject', $passwordResetRequest) }}" class="action-form">
                             @csrf
                             <textarea name="notes" class="notes-input" placeholder="Reason for rejection (required for rejected requests)"></textarea>
-                            <button type="submit" class="action-btn" onclick="return confirm('Are you sure you want to reject this password reset request?')">
+                            <button type="button" class="action-btn" onclick="window.confirmFormId='rejectForm'; showConfirmModal('Reject Request', 'Are you sure you want to reject this password reset request?', document.getElementById('rejectForm').action, 'POST');">
                                 <i class="fas fa-times"></i>
                                 Reject Request
                             </button>
@@ -447,10 +451,10 @@
                     Once you have completed the password update in APP ACCOUNT, click the button below to remove this request from the system.
                 </p>
                 
-                <form method="POST" action="{{ route('admin.password-reset-requests.resolve', $passwordResetRequest) }}" style="display: inline;">
+                <form id="resolveForm" method="POST" action="{{ route('admin.password-reset-requests.resolve', $passwordResetRequest) }}" style="display: inline;">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="resolve-btn" onclick="return confirm('Are you sure you want to resolve this request? This will remove it from the system.')">
+                    <button type="button" class="resolve-btn" onclick="window.confirmFormId='resolveForm'; showConfirmModal('Resolve Request', 'Are you sure you want to resolve this request? This will remove it from the system.', document.getElementById('resolveForm').action, 'DELETE');">
                         <i class="fas fa-check-double"></i>
                         Mark as Resolved & Remove
                     </button>
