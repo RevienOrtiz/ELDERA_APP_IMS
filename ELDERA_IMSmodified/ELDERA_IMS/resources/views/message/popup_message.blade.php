@@ -561,6 +561,14 @@
 
     // Function to handle the confirmation action
     function confirmAction() {
+        if (window.confirmFormId) {
+            var targetForm = document.getElementById(window.confirmFormId);
+            if (targetForm) {
+                try { targetForm.submit(); } catch (e) { }
+            }
+            hideConfirmModal();
+            return;
+        }
         if (window.confirmActionUrl) {
             if (window.confirmMethod === 'GET') {
                 // For GET requests (like logout), redirect directly

@@ -48,11 +48,11 @@
                         </div>
                     </div>
                     <div class="toolbar-right" style="margin-left:auto;">
-                        <div class="toolbar-search-wrap" role="search">
+                        <form id="participantsSearchForm" method="GET" action="{{ route('events.participants', $event->id) }}" class="search-container" role="search">
                             <i class="fas fa-search search-icon" aria-hidden="true"></i>
-                            <input id="searchInput" type="text" class="toolbar-search-input" placeholder="Search Senior Citizen" aria-label="Search Senior Citizen">
-                            <button type="button" id="searchCloseBtn" class="search-close" aria-label="Clear search">&times;</button>
-                        </div>
+                            <input id="participantsSearchInput" type="text" name="search" class="search-input" placeholder="Search Senior Citizen" value="{{ request('search') }}" aria-label="Search Senior Citizen">
+                            <button type="button" id="participantsClear" class="clear-search" aria-label="Clear search"><i class="fas fa-times"></i></button>
+                        </form>
                     </div>
                 </div>
 
@@ -290,36 +290,12 @@
                 gap: 12px;
             }
             .toolbar-right { flex: 1; justify-content: flex-end; }
-            .toolbar-search-wrap {
-                width: clamp(240px, 40vw, 360px);
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                background: #d9d9d9;
-                border-radius: 14px;
-                padding: 6px 10px 6px 12px;
-                box-shadow: inset 0 -1px 0 rgba(0,0,0,0.25), inset 0 8px 12px rgba(0,0,0,0.15);
-            }
-            .search-icon { color: #111827; font-size: 18px; }
-            .toolbar-search-input {
-                flex: 1;
-                border: none;
-                background: transparent;
-                font-weight: 400;
-                font-size: 16px;
-                color: #111827;
-                outline: none;
-            }
-            .toolbar-search-input::placeholder { color: #111827; opacity: 0.85; font-weight: 400; }
-            .search-close {
-                border: none;
-                background: transparent;
-                color: #111827;
-                font-size: 24px;
-                line-height: 1;
-                cursor: pointer;
-                padding: 0 6px;
-            }
+            .search-container { position: relative; display: flex; align-items: center; width: clamp(240px, 40vw, 360px); }
+            .search-icon { position: absolute; left: 12px; color: #666; font-size: 0.9rem; z-index: 1; }
+            .search-input { width: 100%; padding: 10px 40px 10px 35px; border: 2px solid #ddd; border-radius: 8px; font-size: 0.9rem; background: #fff; transition: all 0.3s ease; }
+            .search-input:focus { outline: none; border-color: #CC0052; box-shadow: 0 0 0 3px rgba(204, 0, 82, 0.1); }
+            .clear-search { position: absolute; right: 8px; background: none; border: none; color: #666; cursor: pointer; padding: 4px; border-radius: 4px; transition: all 0.2s ease; display: none; }
+            .clear-search:hover { background: #f0f0f0; color: #333; }
 
             .filter-sort {
                 display: inline-flex;
@@ -370,21 +346,22 @@
             .participants-table {
                 width: 100%;
                 border-collapse: collapse;
-                font-size: 14px;
-                table-layout: fixed;
+                font-size: 0.85rem;
+                table-layout: auto;
+                word-wrap: break-word;
+                border: 1px solid #ddd;
             }
 
             .participants-table th {
-                background: #f5f6f8; /* light gray like reference */
-                color: #1f2937;
-                padding: 14px 12px;
+                background: #f5f5f5;
+                color: #333;
+                padding: 10px 12px;
                 text-align: left;
-                font-weight: 700;
+                font-weight: 600;
                 text-transform: uppercase;
-                font-size: 12px;
-                letter-spacing: 0.6px;
-                border-bottom: 1px solid #e5e7eb;
-                border-right: 1px solid #e5e7eb;
+                font-size: 0.8rem;
+                letter-spacing: 0.4px;
+                border: 1px solid #ddd;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -403,13 +380,14 @@
             /* Actions column: compact width */
 
             .participants-table td {
-                padding: 15px 12px;
-                border-bottom: 1px solid #e0e0e0;
+                padding: 10px 12px;
+                border: 1px solid #ddd;
                 vertical-align: middle;
                 text-align: center;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
+                color: #555;
             }
 
             .participants-table td:not(:nth-child(7)) {
@@ -700,38 +678,26 @@
         </style>
 
         <script>
-            // Search-only logic (filter & sort removed)
-            document.addEventListener('DOMContentLoaded', () => {
-                const searchInput = document.getElementById('searchInput');
-                const searchCloseBtn = document.getElementById('searchCloseBtn');
-                
-                // Apply search filter as the user types
-                searchInput.addEventListener('input', filterBySearch);
-
-                if (searchCloseBtn) {
-                    searchCloseBtn.addEventListener('click', () => {
-                        searchInput.value = '';
-                        filterBySearch();
-                        searchInput.blur();
+            (function(){
+                var input=document.getElementById('participantsSearchInput');
+                var clearBtn=document.getElementById('participantsClear');
+                if(!input) return;
+                function rows(){ return Array.from(document.querySelectorAll('.participants-table tbody tr')); }
+                function applyFilter(){
+                    var q=(input.value||'').trim().toLowerCase();
+                    rows().forEach(function(r){
+                        var os=(r.dataset.osca||'');
+                        var nm=(r.dataset.name||'');
+                        var show=!q || os.indexOf(q)>-1 || nm.indexOf(q)>-1;
+                        r.style.display=show?'':'none';
                     });
+                    if(clearBtn) clearBtn.style.display = q ? 'block' : 'none';
                 }
-
-                // Initial apply to ensure current state is reflected
-                filterBySearch();
-            });
-
-            function getParticipantRows() {
-                return Array.from(document.querySelectorAll('.participants-table tbody tr'));
-            }
-
-            function filterBySearch() {
-                const search = (document.getElementById('searchInput').value || '').trim().toLowerCase();
-                const rows = getParticipantRows();
-                rows.forEach(row => {
-                    const matchesSearch = !search || row.dataset.name.includes(search) || (row.dataset.osca || '').includes(search);
-                    row.style.display = matchesSearch ? '' : 'none';
-                });
-            }
+                input.addEventListener('input', applyFilter);
+                input.addEventListener('keydown', function(e){ if(e.key==='Escape'){ input.value=''; applyFilter(); }});
+                if(clearBtn){ clearBtn.addEventListener('click', function(){ input.value=''; applyFilter(); }); }
+                applyFilter();
+            })();
             // Attendance toggle functionality
             document.addEventListener('DOMContentLoaded', function() {
                 const toggles = document.querySelectorAll('.attendance-toggle-input');

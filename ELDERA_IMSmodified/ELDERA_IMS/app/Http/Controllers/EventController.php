@@ -295,7 +295,7 @@ class EventController extends Controller
     /**
      * Show participants for an event.
      */
-    public function participants(string $id): View
+    public function participants(Request $request, string $id): View
     {
         $event = Event::with(['participants', 'createdBy'])->findOrFail($id);
 
@@ -346,6 +346,21 @@ class EventController extends Controller
             }
         } catch (\Throwable $e) {
             Log::warning('Participants auto-sync skipped: '.$e->getMessage());
+        }
+
+        // Server-side search filter for participants
+        $search = trim((string)$request->get('search', ''));
+        if ($search !== '') {
+            $participants = $event->participants()
+                ->select('seniors.*')
+                ->where(function($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"])
+                      ->orWhere('osca_id', 'like', "%{$search}%");
+                })
+                ->get();
+            $event->setRelation('participants', $participants);
         }
 
         // Get all seniors for potential registration

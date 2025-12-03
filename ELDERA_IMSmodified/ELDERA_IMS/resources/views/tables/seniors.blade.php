@@ -263,9 +263,16 @@
                     <a href="{{ route('seniors.oncbp.report') }}" id="oncbp-report-btn" class="report-btn" target="_blank" style="display: none;">
                         <i class="fas fa-file-pdf"></i> Generate ONCBP Report
                     </a>
-                    <button class="add-btn" id="add-btn" onclick="redirectToForm()">
-                        <i class="fas fa-plus"></i> <span id="add-btn-text">Add New Senior</span>
-                    </button>
+                    <div class="search-container" style="min-width:300px;">
+                        <i class="fas fa-search search-icon" aria-hidden="true"></i>
+                        <input type="text" id="global-search-visible" class="search-input" placeholder="Search Senior Citizen" aria-label="Search seniors">
+                        <button class="clear-search" id="clear-search-visible" style="display: none;" aria-label="Clear search">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <a id="add-icon-btn" href="{{ route('add_new_senior') }}" class="icon-btn add-icon" aria-label="Add New Senior" title="Add New Senior">
+                        <i class="fas fa-plus"></i>
+                    </a>
                 </div>
             </div>
                     
@@ -290,10 +297,27 @@
                 .report-btn i {
                     margin-right: 5px;
                 }
-                .report-btn:hover {
-                    background-color: #45a049; /* Darker green on hover */
-                    color: white;
-                }
+            .report-btn:hover {
+                background-color: #45a049; /* Darker green on hover */
+                color: white;
+            }
+
+            .icon-btn {
+                background: #CC0052;
+                color: #fff;
+                border: none;
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                margin-left: 8px;
+                text-decoration: none;
+                cursor: pointer;
+            }
+
+            .icon-btn:hover { opacity: 0.9; }
             </style>
 
 
@@ -1415,8 +1439,12 @@
                 }
                 
                 function updateAddButton(text, url) {
-                    document.getElementById('add-btn-text').textContent = text;
-                    document.getElementById('add-btn').setAttribute('data-url', url);
+                    var icon = document.getElementById('add-icon-btn');
+                    if (icon) {
+                        icon.setAttribute('href', url);
+                        icon.setAttribute('title', text);
+                        icon.setAttribute('aria-label', text);
+                    }
                 }
 
                 function updateReportButtonVisibility() {
@@ -1636,36 +1664,35 @@
                 });
 
                 // Search functionality
-                const searchInput = document.getElementById('global-search');
-                const clearSearchBtn = document.getElementById('clear-search');
+                const searchInputPrimary = document.getElementById('global-search');
+                const clearSearchPrimary = document.getElementById('clear-search');
+                const searchInputVisible = document.getElementById('global-search-visible');
+                const clearSearchVisible = document.getElementById('clear-search-visible');
 
-                if (searchInput) {
-                searchInput.addEventListener('input', function() {
-                    searchTerm = this.value.toLowerCase();
-                        if (clearSearchBtn) {
-                    clearSearchBtn.style.display = searchTerm ? 'block' : 'none';
-                        }
-                        // Apply search immediately for better UX
-                        applyAllFilters();
-                });
-
-                // Allow Enter key to apply search immediately
-                searchInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        applyAllFilters();
-                    }
-                });
+                function setSearchValue(val) {
+                    const v = (val || '').toLowerCase();
+                    searchTerm = v;
+                    if (searchInputPrimary) searchInputPrimary.value = val;
+                    if (searchInputVisible) searchInputVisible.value = val;
+                    if (clearSearchPrimary) clearSearchPrimary.style.display = v ? 'block' : 'none';
+                    if (clearSearchVisible) clearSearchVisible.style.display = v ? 'block' : 'none';
+                    applyAllFilters();
                 }
 
-                if (clearSearchBtn) {
-                clearSearchBtn.addEventListener('click', function() {
-                        if (searchInput) {
-                    searchInput.value = '';
-                    searchTerm = '';
-                    this.style.display = 'none';
-                    applyAllFilters();
-                        }
-                });
+                function attachSearch(inputEl) {
+                    if (!inputEl) return;
+                    inputEl.addEventListener('input', function() { setSearchValue(this.value); });
+                    inputEl.addEventListener('keypress', function(e){ if(e.key==='Enter'){ e.preventDefault(); setSearchValue(this.value); }});
+                }
+
+                attachSearch(searchInputPrimary);
+                attachSearch(searchInputVisible);
+
+                if (clearSearchPrimary) {
+                    clearSearchPrimary.addEventListener('click', function(){ setSearchValue(''); });
+                }
+                if (clearSearchVisible) {
+                    clearSearchVisible.addEventListener('click', function(){ setSearchValue(''); });
                 }
 
                 // Filter dropdown functionality

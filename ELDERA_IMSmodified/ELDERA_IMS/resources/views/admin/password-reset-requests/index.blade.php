@@ -1,5 +1,6 @@
 <x-sidebar>
 <x-header title="Password Reset Requests" icon="fas fa-key">
+    @include('message.popup_message')
     <style>
         .main-container {
             margin-left: 250px;
@@ -62,11 +63,12 @@
         .toolbar-stat-value { font-weight: 800; color: #fff; }
 
         .table-search { display: flex; align-items: center; gap: 8px; }
-        .toolbar-search-wrap { width: clamp(240px, 40vw, 360px); display: flex; align-items: center; gap: 10px; background: #d9d9d9; border-radius: 14px; padding: 6px 10px 6px 12px; box-shadow: inset 0 -1px 0 rgba(0,0,0,0.25), inset 0 8px 12px rgba(0,0,0,0.15); }
-        .search-icon { color: #111827; font-size: 18px; }
-        .toolbar-search-input { flex: 1; border: none; background: transparent; font-weight: 400; font-size: 16px; color: #111827; outline: none; }
-        .toolbar-search-input::placeholder { color: #111827; opacity: 0.85; font-weight: 400; }
-        .search-close { border: none; background: transparent; color: #111827; font-size: 24px; line-height: 1; cursor: pointer; padding: 0 6px; }
+        .search-container { position: relative; display: flex; align-items: center; width: clamp(240px, 40vw, 360px); }
+        .search-icon { position: absolute; left: 12px; color: #666; font-size: 0.9rem; z-index: 1; }
+        .search-input { width: 100%; padding: 10px 40px 10px 35px; border: 2px solid #ddd; border-radius: 8px; font-size: 0.9rem; background: #fff; transition: all 0.3s ease; }
+        .search-input:focus { outline: none; border-color: #CC0052; box-shadow: 0 0 0 3px rgba(204, 0, 82, 0.1); }
+        .clear-search { position: absolute; right: 8px; background: none; border: none; color: #666; cursor: pointer; padding: 4px; border-radius: 4px; transition: all 0.2s ease; display: none; }
+        .clear-search:hover { background: #f0f0f0; color: #333; }
         .clear-btn {
             border: none;
             background: transparent;
@@ -168,6 +170,10 @@
         .requests-table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: auto;
+            word-wrap: break-word;
+            border: 1px solid #ddd;
+            font-size: 0.85rem;
         }
 
         .table-scroll {
@@ -178,25 +184,30 @@
         .requests-table thead th {
             position: sticky;
             top: 0;
-            background: #fff;
-            z-index: 1;
+            background: #f5f5f5;
+            z-index: 3;
         }
 
         .requests-table th {
-            background: #fff;
-            padding: 12px 16px;
+            background: #f5f5f5;
+            color: #333;
+            padding: 10px 12px;
             text-align: left;
             font-weight: 600;
-            color: #4b5563;
-            border-bottom: 1px solid #e5e7eb;
+            text-transform: uppercase;
             font-size: 0.8rem;
             letter-spacing: 0.4px;
+            border: 1px solid #ddd;
         }
 
         .requests-table td {
-            padding: 14px 16px;
-            border-bottom: 1px solid #f3f4f6;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
             vertical-align: middle;
+            color: #555;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .requests-table tr:hover {
@@ -367,12 +378,10 @@
                 <div class="toolbar-stat"><span class="toolbar-stat-label">Rejected:</span><span class="toolbar-stat-value">{{ $rejectedCount }}</span></div>
             </div>
             <div class="table-search" style="margin-left:auto;">
-                <form method="GET" action="{{ route('admin.password-reset-requests.index') }}" class="toolbar-search-wrap">
+                <form id="passwordResetSearchForm" method="GET" action="{{ route('admin.password-reset-requests.index') }}" class="search-container">
                     <i class="fas fa-search search-icon" aria-hidden="true"></i>
-                    <input type="text" name="search" class="toolbar-search-input" placeholder="Search OSCA ID or Name" value="{{ request('search') }}" aria-label="Search OSCA ID or Name">
-                    @if(request('search'))
-                        <button type="button" onclick="window.location.href='{{ route('admin.password-reset-requests.index', array_filter(['status' => request('status')])) }}'" class="search-close">&times;</button>
-                    @endif
+                    <input id="passwordResetSearchInput" type="text" name="search" class="search-input" placeholder="Search Senior Citizen" value="{{ request('search') }}" aria-label="Search OSCA ID or Name">
+                    <button type="button" id="passwordResetClear" class="clear-search" aria-label="Clear search"><i class="fas fa-times"></i></button>
                 </form>
             </div>
         </div>
@@ -404,7 +413,7 @@
                     </thead>
                     <tbody>
                         @foreach($requests as $request)
-                            <tr>
+                            <tr data-osca="{{ strtolower($request->osca_id) }}" data-name="{{ strtolower($request->full_name) }}">
                                 <td>#{{ $request->id }}</td>
                                 <td><strong>{{ $request->osca_id }}</strong></td>
                                 <td>
@@ -461,13 +470,12 @@
                                             View
                                         </a>
                                         @if($request->status !== 'pending')
-                                            <form method="POST" 
+                                            <form id="resolveForm_{{ $request->id }}" method="POST" 
                                                   action="{{ route('admin.password-reset-requests.resolve', $request) }}" 
-                                                  style="display: inline;"
-                                                  onsubmit="return confirm('Are you sure you want to resolve this request? This will remove it from the list.')">
+                                                  style="display: inline;">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-resolve">
+                                                <button type="button" class="btn btn-resolve" onclick="window.confirmFormId='resolveForm_{{ $request->id }}'; showConfirmModal('Resolve Request', 'Are you sure you want to resolve this request? This will remove it from the list.', document.getElementById('resolveForm_{{ $request->id }}').action, 'DELETE');">
                                                     <i class="fas fa-check"></i>
                                                     Resolve
                                                 </button>
@@ -494,5 +502,27 @@
             @endif
         </div>
     </div>
+    <script>
+        (function(){
+            var input=document.getElementById('passwordResetSearchInput');
+            var clearBtn=document.getElementById('passwordResetClear');
+            if(!input) return;
+            function rows(){ return Array.from(document.querySelectorAll('.requests-table tbody tr')); }
+            function applyFilter(){
+                var q=(input.value||'').trim().toLowerCase();
+                rows().forEach(function(r){
+                    var os=(r.dataset.osca||'');
+                    var nm=(r.dataset.name||'');
+                    var show=!q || os.indexOf(q)>-1 || nm.indexOf(q)>-1;
+                    r.style.display=show?'':'none';
+                });
+                if(clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+            }
+            input.addEventListener('input', applyFilter);
+            input.addEventListener('keydown', function(e){ if(e.key==='Escape'){ input.value=''; applyFilter(); }});
+            if(clearBtn){ clearBtn.addEventListener('click', function(){ input.value=''; applyFilter(); }); }
+            applyFilter();
+        })();
+    </script>
 </x-header>
 </x-sidebar>
