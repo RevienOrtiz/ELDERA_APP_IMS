@@ -91,6 +91,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     // Senior authentication (for Eldera mobile app)
     Route::get('/senior/profile', [App\Http\Controllers\Api\SeniorAuthController::class, 'profile']);
     Route::post('/senior/logout', [App\Http\Controllers\Api\SeniorAuthController::class, 'logout']);
+    Route::post('/senior/change-password', [App\Http\Controllers\Api\SeniorAuthController::class, 'changePassword']);
     
     // Senior Citizens
     Route::get('/seniors', [App\Http\Controllers\Api\SeniorController::class, 'index']);

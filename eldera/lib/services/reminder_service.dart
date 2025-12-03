@@ -91,6 +91,20 @@ class ReminderService {
       // Schedule the local notification
       debugPrint(
           '📅 Scheduling notification for ${announcement.title} at ${reminderTime.toString()}');
+      try {
+        final serviceManager = ServiceManager();
+        final notificationService = serviceManager.notificationService;
+        if (notificationService != null) {
+          final enabled = await notificationService.areNotificationsEnabled();
+          if (!enabled) {
+            await notificationService.requestPermissions();
+          }
+          final canExact = await notificationService.canScheduleExactAlarms();
+          if (!canExact) {
+            await notificationService.requestExactAlarmPermissionWithGuidance();
+          }
+        }
+      } catch (_) {}
       await _scheduleNotification(updatedAnnouncement);
 
       // Test immediate notification to verify system is working

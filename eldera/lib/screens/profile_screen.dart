@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import '../services/font_size_service.dart';
@@ -24,14 +22,12 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final FontSizeService _fontSizeService = FontSizeService.instance;
   final LanguageService _languageService = LanguageService.instance;
-  final ImagePicker _picker = ImagePicker();
   // Using UserService and AuthService
   Uint8List? _selectedImage; // Use Uint8List for both web and mobile
   app_user.User? _currentUser;
   String? _authToken;
 
-  Future<void> _loadWebProfileImage() async {
-    if (!kIsWeb) return;
+  Future<void> _loadProfileImageFromApi() async {
     final url = _currentUser?.profileImageUrl;
     if (url == null || url.isEmpty) return;
     final token = _authToken ?? await SecureStorageService.getAuthToken();
@@ -52,46 +48,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (_) {}
   }
 
-  Future<void> _saveProfileImage(Uint8List imageBytes, String fileName) async {
-    try {
-      if (_currentUser?.id == null) {
-        throw Exception('User not authenticated');
-      }
-
-      // Upload via UserService
-      final result = await UserService.updateProfileImage(
-        userId: _currentUser!.id,
-        imageBytes: imageBytes,
-        fileName: fileName,
-      );
-
-      if (result['success']) {
-        // Update current user with new image URL
-        if (_currentUser != null) {
-          _currentUser = _currentUser!.copyWith(
-            profileImageUrl: result['imageUrl'],
-          );
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message']),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        throw Exception(result['message']);
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error saving profile image: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
   Future<void> _loadAuthToken() async {
     try {
       final token = await SecureStorageService.getAuthToken();
@@ -99,98 +55,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _authToken = token;
       });
     } catch (_) {}
-  }
-
-  Future<void> _pickImage() async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 85,
-      );
-
-      if (image != null) {
-        // Read as bytes for both web and mobile
-        final bytes = await image.readAsBytes();
-        await _saveProfileImage(bytes, image.name);
-        setState(() {
-          _selectedImage = bytes;
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error picking image: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  void _showImageSourceDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(_getSafeText('select_image_source')),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: Text(_getSafeText('gallery')),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _pickImage();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: Text(_getSafeText('camera')),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _pickImageFromCamera();
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(_getSafeText('cancel')),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _pickImageFromCamera() async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.camera,
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 85,
-      );
-
-      if (image != null) {
-        // Read as bytes for both web and mobile
-        final bytes = await image.readAsBytes();
-        await _saveProfileImage(bytes, image.name);
-        setState(() {
-          _selectedImage = bytes;
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error taking photo: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
 
   @override
@@ -240,7 +104,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       setState(() {});
       await _loadAuthToken();
-      await _loadWebProfileImage();
+      await _loadProfileImageFromApi();
     } catch (e) {
       print('ProfileScreen: Error initializing user data: $e');
       if (mounted) {
@@ -357,117 +221,92 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // Profile Avatar
-                  GestureDetector(
-                    onTap: _showImageSourceDialog,
-                    child: Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 4),
-                      ),
-                      child: ClipOval(
-                        child: _selectedImage != null
-                            ? Image.memory(
-                                _selectedImage!,
-                                fit: BoxFit.cover,
-                                width: 120,
-                                height: 120,
-                              )
-                            : (_currentUser?.profileImageUrl != null
-                                ? Image.network(
-                                    _currentUser!.profileImageUrl!,
-                                    headers: _authToken != null
-                                        ? {
-                                            'Authorization':
-                                                'Bearer $_authToken'
-                                          }
-                                        : null,
-                                    fit: BoxFit.cover,
-                                    width: 120,
-                                    height: 120,
-                                    errorBuilder: (context, error, stack) {
-                                      return Container(
-                                        color: const Color(0xFF2D5A5A),
-                                      );
-                                    },
-                                  )
-                                : Container(
-                                    color: const Color(0xFF2D5A5A),
-                                    child: Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        Container(
-                                          width: 80,
-                                          height: 80,
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 4),
+                    ),
+                    child: ClipOval(
+                      child: _selectedImage != null
+                          ? Image.memory(
+                              _selectedImage!,
+                              fit: BoxFit.cover,
+                              width: 120,
+                              height: 120,
+                            )
+                          : (_currentUser?.profileImageUrl != null
+                              ? Image.network(
+                                  _currentUser!.profileImageUrl!,
+                                  headers: _authToken != null
+                                      ? {'Authorization': 'Bearer $_authToken'}
+                                      : null,
+                                  fit: BoxFit.cover,
+                                  width: 120,
+                                  height: 120,
+                                  errorBuilder: (context, error, stack) {
+                                    return Container(
+                                      color: const Color(0xFF2D5A5A),
+                                    );
+                                  },
+                                )
+                              : Container(
+                                  color: const Color(0xFF2D5A5A),
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      Container(
+                                        width: 80,
+                                        height: 80,
+                                        decoration: const BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Color(0xFFE8B4A0),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        top: 15,
+                                        child: Container(
+                                          width: 70,
+                                          height: 40,
                                           decoration: const BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: Color(0xFFE8B4A0),
-                                          ),
-                                        ),
-                                        Positioned(
-                                          top: 15,
-                                          child: Container(
-                                            width: 70,
-                                            height: 40,
-                                            decoration: const BoxDecoration(
-                                              color: Color(0xFFD3D3D3),
-                                              borderRadius: BorderRadius.only(
-                                                topLeft: Radius.circular(35),
-                                                topRight: Radius.circular(35),
-                                              ),
+                                            color: Color(0xFFD3D3D3),
+                                            borderRadius: BorderRadius.only(
+                                              topLeft: Radius.circular(35),
+                                              topRight: Radius.circular(35),
                                             ),
                                           ),
                                         ),
-                                        Positioned(
-                                          bottom: 25,
-                                          child: Container(
-                                            width: 30,
-                                            height: 8,
-                                            decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius:
-                                                  BorderRadius.circular(4),
+                                      ),
+                                      Positioned(
+                                        bottom: 25,
+                                        child: Container(
+                                          width: 30,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        bottom: 0,
+                                        child: Container(
+                                          width: 80,
+                                          height: 30,
+                                          decoration: const BoxDecoration(
+                                            color: Color(0xFF4CAF50),
+                                            borderRadius: BorderRadius.only(
+                                              bottomLeft: Radius.circular(40),
+                                              bottomRight: Radius.circular(40),
                                             ),
                                           ),
                                         ),
-                                        Positioned(
-                                          bottom: 0,
-                                          child: Container(
-                                            width: 80,
-                                            height: 30,
-                                            decoration: const BoxDecoration(
-                                              color: Color(0xFF4CAF50),
-                                              borderRadius: BorderRadius.only(
-                                                bottomLeft: Radius.circular(40),
-                                                bottomRight:
-                                                    Radius.circular(40),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Positioned(
-                                          bottom: 5,
-                                          right: 5,
-                                          child: Container(
-                                            width: 24,
-                                            height: 24,
-                                            decoration: const BoxDecoration(
-                                              color: Color(0xFF4CAF50),
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: Icon(
-                                              Icons.camera_alt,
-                                              color: Colors.white,
-                                              size: _getSafeScaledIconSize(
-                                                  baseSize: 16.0),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  )),
-                      ),
+                                      ),
+                                    ],
+                                  ),
+                                )),
                     ),
                   ),
                   const SizedBox(height: 20),

@@ -127,8 +127,8 @@ class SeniorAuthController extends Controller
         
         if ($appUser) {
             // Debug the password check
-            \Log::info('Login attempt for OSCA ID: ' . $request->osca_id);
-            \Log::info('Password check result: ' . (Hash::check($request->password, $appUser->password) ? 'true' : 'false'));
+            Log::info('Login attempt for OSCA ID: [REDACTED]');
+            Log::info('Password check result: ' . (Hash::check($request->password, $appUser->password) ? 'true' : 'false'));
             
             if (Hash::check($request->password, $appUser->password)) {
                 // App user found and password matches
@@ -474,5 +474,56 @@ class SeniorAuthController extends Controller
             'osca_id' => $appUser->osca_id,
             'request_id' => $passwordResetRequest->id
         ]);
+    }
+
+    /**
+     * Change password for authenticated senior app user.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function changePassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8',
+            'confirm_password' => 'required|string|same:new_password',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authenticated'
+            ], 401);
+        }
+
+        $currentPassword = $request->input('current_password');
+        $newPassword = $request->input('new_password');
+
+        if (!Hash::check($currentPassword, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Current password is incorrect'
+            ], 401);
+        }
+
+        $user->password = Hash::make($newPassword);
+        $user->save();
+
+        Log::info('Password changed successfully for user', [
+            'user_type' => get_class($user),
+            'user_id' => $user->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password changed successfully',
+        ], 200);
     }
 }

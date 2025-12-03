@@ -170,6 +170,10 @@ class ServiceManager {
           debugPrint(
               '⚠️ Notifications not enabled - some features may be limited');
         }
+        if (!exactAlarmPermission) {
+          await _notificationService!
+              .requestExactAlarmPermissionWithGuidance();
+        }
       }
 
       _notificationInitialized = true;
