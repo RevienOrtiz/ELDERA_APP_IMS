@@ -125,31 +125,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadProfileImage() async {
     try {
-      if (kIsWeb) {
-        final url = _currentUser?.profileImageUrl;
-        if (url == null || url.isEmpty) return;
-        final token = _authToken ?? await SecureStorageService.getAuthToken();
-        if (token == null) return;
-        final resp = await http.get(
-          Uri.parse(url),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Accept': 'image/*',
-          },
-        );
-        if (resp.statusCode == 200) {
-          setState(() {
-            _selectedImage = resp.bodyBytes;
-          });
-        }
-      } else {
-        final prefs = await SharedPreferences.getInstance();
-        final bytes = prefs.getString('profile_image');
-        if (bytes != null) {
-          setState(() {
-            _selectedImage = Uint8List.fromList(const []);
-          });
-        }
+      final url = _currentUser?.profileImageUrl;
+      if (url == null || url.isEmpty) return;
+      final token = _authToken ?? await SecureStorageService.getAuthToken();
+      if (token == null) return;
+      final resp = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'image/*',
+        },
+      );
+      if (resp.statusCode == 200) {
+        setState(() {
+          _selectedImage = resp.bodyBytes;
+        });
       }
     } catch (_) {}
   }

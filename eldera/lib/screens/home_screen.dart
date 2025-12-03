@@ -132,8 +132,13 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       if (apiKey == null || apiKey.isEmpty) {
-        print(
-            'Gemini TTS: No API key found. Please configure your Gemini API key in settings.');
+        print('Gemini TTS: No API key found. Falling back to device TTS');
+        try {
+          await localTts.initialize();
+          print('Device TTS initialized as fallback');
+        } catch (e) {
+          print('Fallback TTS init failed: $e');
+        }
         return;
       }
 

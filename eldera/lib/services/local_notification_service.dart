@@ -284,11 +284,7 @@ class LocalNotificationService {
         showWhen: true,
         enableVibration: true,
         playSound: true,
-        // Wake up device when notification arrives
-        fullScreenIntent: true,
-        category: AndroidNotificationCategory.alarm,
         visibility: NotificationVisibility.public,
-        // Additional wake-up settings
         enableLights: true,
         ledColor: Colors.red,
         ledOnMs: 1000,
@@ -484,11 +480,7 @@ class LocalNotificationService {
         showWhen: true,
         enableVibration: true,
         playSound: true,
-        // Wake up device when notification arrives
-        fullScreenIntent: true,
-        category: AndroidNotificationCategory.alarm,
         visibility: NotificationVisibility.public,
-        // Additional wake-up settings
         enableLights: true,
         ledColor: Colors.red,
         ledOnMs: 1000,
