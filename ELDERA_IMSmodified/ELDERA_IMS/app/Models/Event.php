@@ -36,8 +36,6 @@ class Event extends Model
 
     protected $casts = [
         'event_date' => 'date',
-        'start_time' => 'datetime',
-        'end_time' => 'datetime',
         'max_participants' => 'integer',
         'current_participants' => 'integer',
         'recipient_selection' => 'array',
@@ -141,7 +139,14 @@ class Event extends Model
 
     public function getFormattedDateTimeAttribute(): string
     {
-        return $this->event_date->format('M d, Y') . ' at ' . $this->start_time->format('g:i A');
+        $time = null;
+        if ($this->start_time instanceof \Carbon\CarbonInterface) {
+            $time = $this->start_time;
+        } else if (is_string($this->start_time) && $this->start_time !== '') {
+            try { $time = \Carbon\Carbon::createFromFormat('H:i:s', $this->start_time); } catch (\Throwable $e) { $time = null; }
+        }
+        $timeText = $time ? $time->format('g:i A') : 'N/A';
+        return $this->event_date->format('M d, Y') . ' at ' . $timeText;
     }
 
     public function getAvailableSlotsAttribute(): int

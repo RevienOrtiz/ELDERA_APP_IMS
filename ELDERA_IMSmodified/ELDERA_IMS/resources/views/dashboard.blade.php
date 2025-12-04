@@ -877,7 +877,7 @@
                                             {{ $event->event_date->format('d/m/y') }}
                                         </td>
                                         <td style="padding: 12px 8px; text-align: center; vertical-align: middle; color: #555; font-size: 13px; font-weight: 500;">
-                                            {{ $event->start_time->format('g:i A') }}
+                                            {{ (function($t){ if($t instanceof \Carbon\CarbonInterface) return $t->format('g:i A'); if(is_string($t) && $t!==''){ try { return \Carbon\Carbon::createFromFormat('H:i:s',$t)->format('g:i A'); } catch (\Throwable $e) { return 'N/A'; } } return 'N/A'; })($event->start_time) }}
                                         </td>
                                         <td style="padding: 12px 12px; vertical-align: middle; color: #666; font-size: 13px;">
                                             {{ ucfirst($event->location) }}

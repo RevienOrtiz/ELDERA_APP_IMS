@@ -1273,13 +1273,18 @@
         let currentDate = new Date(); // Set to current date
         let currentView = 'month';
         let events = {!! json_encode($events->map(function($event) {
+            $formatTime = function($t) {
+                if ($t instanceof \Carbon\CarbonInterface) { return $t->format('H:i'); }
+                if (is_string($t) && $t !== '') { try { return \Carbon\Carbon::createFromFormat('H:i:s', $t)->format('H:i'); } catch (\Throwable $e) { return null; } }
+                return null;
+            };
             return [
                 'id' => $event->id,
                 'title' => $event->title,
                 'type' => $event->event_type,
                 'date' => $event->event_date->format('Y-m-d'),
-                'time' => $event->start_time->format('H:i'),
-                'end_time' => $event->end_time ? $event->end_time->format('H:i') : null,
+                'time' => $formatTime($event->start_time),
+                'end_time' => $formatTime($event->end_time),
                 'description' => $event->description,
                 'location' => $event->location,
                 'status' => $event->computed_status,

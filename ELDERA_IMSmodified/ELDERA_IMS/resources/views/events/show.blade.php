@@ -571,13 +571,13 @@
                             </div>
                             <div class="col-md-6">
                                 <label for="eventTime" class="form-label fw-semibold">Time</label>
-                                <input type="time" class="form-control" id="eventTime" value="{{ old('start_time', $event->start_time->format('H:i')) }}" required>
+                                <input type="time" class="form-control" id="eventTime" value="{{ old('start_time', (function($t){ if($t instanceof \Carbon\CarbonInterface) return $t->format('H:i'); if(is_string($t) && $t!==''){ try { return \Carbon\Carbon::createFromFormat('H:i:s',$t)->format('H:i'); } catch (\Throwable $e) { return ''; } } return ''; })($event->start_time)) }}" required>
                             </div>
                         </div>
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="eventEndTime" class="form-label fw-semibold">End Time</label>
-                                <input type="time" class="form-control" id="eventEndTime" value="{{ old('end_time', $event->end_time ? $event->end_time->format('H:i') : '') }}">
+                                <input type="time" class="form-control" id="eventEndTime" value="{{ old('end_time', (function($t){ if($t instanceof \Carbon\CarbonInterface) return $t->format('H:i'); if(is_string($t) && $t!==''){ try { return \Carbon\Carbon::createFromFormat('H:i:s',$t)->format('H:i'); } catch (\Throwable $e) { return ''; } } return ''; })($event->end_time)) }}">
                             </div>
                             <div class="col-md-6"></div>
                         </div>
@@ -757,6 +757,8 @@
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                         },
                         body: JSON.stringify({
@@ -910,7 +912,8 @@
                     form.addEventListener('submit', function(e) {
                         e.preventDefault();
                         const recipientData = getRecipientSelectionData();
-                        if (!validateRecipientSelection(recipientData)) return;
+                        const hasRecipientSelection = recipientData.types && recipientData.types.length > 0;
+                        if (hasRecipientSelection && !validateRecipientSelection(recipientData)) return;
                         const fd = new FormData();
                         fd.append('title', document.getElementById('eventTitle').value);
                         fd.append('event_type', document.getElementById('eventType').value);
@@ -924,15 +927,30 @@
                         fd.append('organizer', document.getElementById('eventOrganizer').value);
                         fd.append('contact_person', document.getElementById('eventContactPerson').value);
                         fd.append('contact_number', document.getElementById('eventContactNumber').value);
-                        fd.append('recipient_selection', JSON.stringify(recipientData));
+                        if (hasRecipientSelection) {
+                            fd.append('recipient_selection', JSON.stringify(recipientData));
+                        }
                         fd.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                        fetch('/Events/{{ $event->id }}', { method: 'PUT', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') } })
-                            .then(r => { if (!r.ok) { return r.json().then(err => { throw err; }).catch(() => { throw new Error('Server error'); }); } return r.json(); })
+                        fd.append('_method', 'PUT');
+                        fetch('{{ route('events.update', $event->id) }}', { method: 'POST', body: fd, headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') } })
+                            .then(async (r) => { if (r.ok) { return r.json(); } const text = await r.text(); try { const j = JSON.parse(text); throw j; } catch (_) { throw new Error((text || 'Server error').trim()); } })
                             .then((data) => { 
-                                try { window.showSuccessModal('Event successfully updated.', 'updated'); } catch (e) {}
+                                try {
+                                    if (data && data.event) {
+                                        const titleEl = document.querySelector('.event-title');
+                                        if (titleEl && typeof data.event.title !== 'undefined') titleEl.textContent = data.event.title || '';
+                                        const locEl = document.querySelector('.info-item:nth-child(2) .info-value');
+                                        if (locEl && typeof data.event.location !== 'undefined') locEl.lastChild.nodeValue = ' ' + (data.event.location || '');
+                                        const cpEl = document.querySelector('.info-item:nth-child(4) .info-value');
+                                        if (cpEl) cpEl.lastChild.nodeValue = ' ' + ((data.event.contact_person || '-') + ' - ' + (data.event.contact_number || '-'));
+                                        const descEl = document.querySelector('.description-content');
+                                        if (descEl && typeof data.event.description !== 'undefined') descEl.textContent = data.event.description || '';
+                                    }
+                                    window.showSuccessModal('Event successfully updated.', 'updated');
+                                } catch (e) {}
                                 setTimeout(() => { closeModal(); location.reload(); }, 1200);
                             })
-                            .catch((err) => { try { const msg = (err && err.errors) ? 'Please check all required fields.' : 'Error updating event. Please try again.'; document.getElementById('errorMessage').innerText = msg; new bootstrap.Modal(document.getElementById('errorModal')).show(); } catch (_) {} });
+                            .catch((err) => { try { let msg = 'Error updating event. Please try again.'; if (err) { if (err.errors && typeof err.errors === 'object') { const parts = []; for (const [field, arr] of Object.entries(err.errors)) { if (Array.isArray(arr) && arr.length) parts.push(arr[0]); } if (parts.length) msg = parts.join('\n'); } else if (err.message) { msg = err.message; } } document.getElementById('errorMessage').innerText = msg; new bootstrap.Modal(document.getElementById('errorModal')).show(); } catch (_) {} });
                     });
                 }
             });
