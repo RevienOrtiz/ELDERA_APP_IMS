@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 
 class ApplicationController extends Controller
@@ -75,14 +76,13 @@ class ApplicationController extends Controller
                 $files['supporting_documents'] = $request->file('supporting_documents');
             }
 
-            // Create the application
             $application = $this->applicationService->createSeniorIdApplication(
                 $validatedData, 
                 $files, 
                 Auth::check() ? Auth::user()->id : 1 // Default to user ID 1 if not authenticated
             );
-
-            return redirect()->back()
+            Cache::forget('id_applications_page_1');
+            return redirect()->route('seniors.id-applications')
                 ->with('success', 'Senior ID application submitted successfully! Application ID: ' . $application->id);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
