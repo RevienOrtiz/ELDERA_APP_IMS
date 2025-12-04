@@ -242,7 +242,7 @@
 </head>
 
 <body>
-    <img src="{{asset('images/LCSCF_LOGO.png')}}" alt="LCSCF Logo" class="logo">
+    <img src="{{asset('images/LCSCF_Logo.png')}}" alt="LCSCF Logo" class="logo">
     
     <main>
         <div class="container">
