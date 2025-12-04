@@ -396,20 +396,27 @@
 </style>
 
 @php
-    // Pull and clear flash messages to ensure they don't persist across reloads
-    $successMessage = session()->pull('success');
-    $errorMessage = session()->pull('error');
+    $successMessage = session('success');
+    if (!empty($successMessage)) { session()->forget('success'); }
+    $errorMessage = session('error');
+    if (!empty($errorMessage)) { session()->forget('error'); }
 @endphp
 
 <script>
     // ✅ Show Success Modal if there is a success message
     @if(!empty($successMessage))
         document.addEventListener('DOMContentLoaded', function() {
+            try {
+                var key = 'successModal:' + window.location.pathname;
+                var last = null;
+                try { last = sessionStorage.getItem(key); } catch (e) {}
+                var successMessage = {!! json_encode($successMessage) !!};
+                if (last === successMessage) { return; }
+            } catch (e) {}
             var successModal = new bootstrap.Modal(document.getElementById('successModal'), {
                 backdrop: 'static',
                 keyboard: false
             });
-            var successMessage = {!! json_encode($successMessage) !!};
             var successCard = document.getElementById('successCard');
             var successIcon = document.getElementById('successIcon');
             var successTitle = document.getElementById('successTitle');
@@ -454,6 +461,7 @@
             
             document.getElementById('successMessage').innerText = successMessage;
             successModal.show();
+            try { sessionStorage.setItem(key, successMessage); } catch (e) {}
 
             function cleanupModals() {
                 document.querySelectorAll('.modal-backdrop').forEach(function(b){ b.remove(); });
