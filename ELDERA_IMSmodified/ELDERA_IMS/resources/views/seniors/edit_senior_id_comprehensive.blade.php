@@ -126,7 +126,9 @@
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label small">Annual Income <span class="text-danger">*</span></label>
-                                        <input type="number" name="annual_income" id="senior_annual_income" placeholder="Annual Income" required class="form-control form-control-sm" value="{{ old('annual_income', $application->seniorIdApplication->annual_income ?? '') }}">
+                                        @php $computedAnnual = $senior->monthly_income !== null ? round(((float)$senior->monthly_income) * 12, 2) : ($application->seniorIdApplication->annual_income ?? null); @endphp
+                                        <input type="number" name="annual_income" id="senior_annual_income" placeholder="Annual Income" class="form-control form-control-sm" value="{{ old('annual_income', $computedAnnual) }}" readonly>
+                                        <small class="text-muted">Auto-computed from monthly income on the Seniors table.</small>
                                     </div>
                                 </div>
                                 

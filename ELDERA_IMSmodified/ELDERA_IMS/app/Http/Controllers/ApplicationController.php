@@ -40,22 +40,31 @@ class ApplicationController extends Controller
             }
 
             // Prepare data for validation
-            $data = [
-                'senior_id' => $request->senior_id ?: null,
-                'address' => $request->address,
-                'gender' => $request->gender,
-                'date_of_birth' => $request->date_of_birth,
-                'birth_place' => $request->birth_place ?? 'Not specified',
-                'occupation' => $request->occupation,
-                'civil_status' => $request->civil_status,
-                'annual_income' => $request->annual_income,
-                'pension_source' => $request->pension_source,
-                'ctc_number' => $request->ctc_number,
-                'place_of_issuance' => $request->place_of_issuance,
-                'date_of_application' => $request->date_of_application,
-                'date_of_issued' => $request->date_of_issued,
-                'date_of_received' => $request->date_of_received,
-            ];
+        $data = [
+            'senior_id' => $request->senior_id ?: null,
+            'address' => $request->address,
+            'gender' => $request->gender,
+            'date_of_birth' => $request->date_of_birth,
+            'birth_place' => $request->birth_place ?? 'Not specified',
+            'occupation' => $request->occupation,
+            'civil_status' => $request->civil_status,
+            'annual_income' => $request->annual_income,
+            'pension_source' => $request->pension_source,
+            'ctc_number' => $request->ctc_number,
+            'place_of_issuance' => $request->place_of_issuance,
+            'date_of_application' => $request->date_of_application,
+            'date_of_issued' => $request->date_of_issued,
+            'date_of_received' => $request->date_of_received,
+        ];
+
+            if ($data['senior_id']) {
+                $senior = Senior::find($data['senior_id']);
+                if ($senior && (empty($data['annual_income']) || $data['annual_income'] === null)) {
+                    if ($senior->monthly_income !== null) {
+                        $data['annual_income'] = round(((float)$senior->monthly_income) * 12, 2);
+                    }
+                }
+            }
 
             // Validate application data
             
