@@ -630,6 +630,18 @@ class SeniorController extends Controller
         }
 
             $senior->update($validatedData);
+            if (array_key_exists('monthly_income', $validatedData)) {
+                $this->syncAnnualIncomeForSenior($senior);
+                $apps = Application::where('senior_id', $senior->id)
+                    ->where('application_type', 'pension')
+                    ->with('pensionApplication')
+                    ->get();
+                foreach ($apps as $app) {
+                    if ($app->pensionApplication) {
+                        $app->pensionApplication->update(['monthly_income' => $senior->monthly_income]);
+                    }
+                }
+            }
             Log::info('Senior updated successfully', ['id' => $id]);
 
             // Clear relevant caches
@@ -947,7 +959,7 @@ class SeniorController extends Controller
             'sex' => 'required|string|in:Male,Female',
             'civil_status' => 'required|string|in:Single,Married,Widowed,Separated,Others',
                 'contact_number' => 'required|string|max:20',
-                'monthly_income' => 'required|numeric|min:0',
+            'monthly_income' => 'nullable|numeric|min:0',
                 'status' => 'required|string|in:pending,received,approved,rejected',
             // Pension-specific fields
             'permanent_income' => 'nullable|string',
@@ -992,13 +1004,15 @@ class SeniorController extends Controller
             // Update the pension application
             $application->pensionApplication->update([
                 'rrn' => $validatedData['rrn'] ?? null,
-                'monthly_income' => $validatedData['monthly_income'],
+                'monthly_income' => $application->senior->monthly_income,
                 'has_pension' => $validatedData['has_pension'] == '1',
                 'pension_amount' => $validatedData['pension_amount'] ?? 0,
                 'pension_source' => $validatedData['pension_source'] ?? null,
                 'living_arrangement' => $validatedData['living_arrangement'] ?? null,
                 'certification' => $validatedData['certification'] == 'on' ? true : false,
             ]);
+
+            $this->syncAnnualIncomeForSenior($application->senior);
 
             // Update the application status
             $application->update([
@@ -1221,14 +1235,14 @@ class SeniorController extends Controller
             
             // Validate the data - ID application specific fields from form_seniorID.blade.php
             $validatedData = $request->validate([
-            'address' => 'required|string|max:255',
+                'address' => 'required|string|max:255',
                 'gender' => 'required|string|max:255',
                 'date_of_birth' => 'required|date',
                 'age' => 'nullable|integer|min:0',
                 'birth_place' => 'required|string|max:255',
                 'occupation' => 'nullable|string|max:255',
                 'civil_status' => 'required|string|in:Single,Married,Widowed,Divorced,Separated',
-                'annual_income' => 'required|numeric|min:0',
+                'annual_income' => 'nullable|numeric|min:0',
                 'pension_source' => 'nullable|string|max:255',
                 'ctc_number' => 'nullable|string|max:255',
                 'date_of_application' => 'nullable|date',
@@ -1251,9 +1265,13 @@ class SeniorController extends Controller
             ]);
 
             // Update the senior ID application
+            $annualComputed = $application->senior->monthly_income !== null
+                ? round(((float)$application->senior->monthly_income) * 12, 2)
+                : ($validatedData['annual_income'] ?? null);
+
             $application->seniorIdApplication->update([
                 'civil_status' => $validatedData['civil_status'],
-                'annual_income' => $validatedData['annual_income'],
+                'annual_income' => $annualComputed,
                 'pension_source' => $validatedData['pension_source'],
                 'ctc_number' => $validatedData['ctc_number'],
                 'date_of_application' => $validatedData['date_of_application'],
@@ -1696,5 +1714,23 @@ class SeniorController extends Controller
         return response($file, 200)
             ->header('Content-Type', $mimeType)
             ->header('Content-Disposition', 'inline; filename="' . basename($senior->photo_path) . '"');
+    }
+    private function syncAnnualIncomeForSenior(Senior $senior): void
+    {
+        $monthly = $senior->monthly_income;
+        if ($monthly === null) {
+            return;
+        }
+        $annual = round(((float)$monthly) * 12, 2);
+        $apps = Application::where('senior_id', $senior->id)
+            ->where('application_type', 'senior_id')
+            ->with('seniorIdApplication')
+            ->get();
+        foreach ($apps as $app) {
+            if ($app->seniorIdApplication) {
+                $app->seniorIdApplication->update(['annual_income' => $annual]);
+            }
+        }
+        $this->clearRelevantCaches();
     }
 }

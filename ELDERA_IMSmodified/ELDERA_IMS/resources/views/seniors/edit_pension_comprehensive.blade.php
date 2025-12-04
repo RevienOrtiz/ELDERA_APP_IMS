@@ -219,8 +219,8 @@
 
                             <!-- MONTHLY INCOME -->
                             <div class="mb-4">
-                                <label class="form-label fw-bold small">Monthly Income <span class="text-danger">*</span></label>
-                                <input type="number" name="monthly_income" class="form-control form-control-sm" placeholder="Enter monthly income" value="{{ old('monthly_income', $application->senior->monthly_income ?? '') }}" required>
+                                <label class="form-label fw-bold small">Monthly Income</label>
+                                <input type="number" name="monthly_income" class="form-control form-control-sm" placeholder="Enter monthly income" value="{{ old('monthly_income', $application->senior->monthly_income ?? '') }}" readonly>
                             </div>
                             </div>
 
