@@ -116,6 +116,85 @@
                         </div>
                     </div>
 
+                    <div class="form-section">
+                        <h3 class="section-title">Target Recipients Selection</h3>
+                        <p class="text-muted small mb-3">Choose who should receive notifications for this event</p>
+                        <div class="d-flex flex-column gap-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input type="checkbox" id="recipients_all" name="recipientTypes[]" value="all" class="form-check-input">
+                                        <label for="recipients_all" class="form-check-label">All Senior Citizens</label>
+                                    </div>
+                                    <p class="text-muted small mb-0 ms-4">Send notification to every registered senior citizen</p>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input type="checkbox" id="recipients_barangay" name="recipientTypes[]" value="barangay" class="form-check-input">
+                                        <label for="recipients_barangay" class="form-check-label">Filter by Barangay</label>
+                                    </div>
+                                    <p class="text-muted small mb-3 ms-4">Send notification to seniors in selected barangay(s)</p>
+                                    <div id="barangaySelection" class="ms-4" style="display:none;">
+                                        <h6 class="mb-3">Select Barangays</h6>
+                                        <div class="row g-2">
+                                            <div class="col-12 mb-2">
+                                                <div class="form-check">
+                                                    <input type="checkbox" id="barangay_all" name="selectedBarangays[]" value="all" class="form-check-input">
+                                                    <label for="barangay_all" class="form-check-label">All Barangays</label>
+                                                </div>
+                                            </div>
+                                            @foreach([
+                                                'aliwekwek', 'baay', 'balangobong', 'balococ', 'bantayan', 'basing', 'capandanan',
+                                                'domalandan-center', 'domalandan-east', 'domalandan-west', 'dorongan', 'dulag',
+                                                'estanza', 'lasip', 'libsong-east', 'libsong-west', 'malawa', 'malimpuec',
+                                                'maniboc', 'matalava', 'naguelguel', 'namolan', 'pangapisan-north', 'pangapisan-sur',
+                                                'poblacion', 'quibaol', 'rosario', 'sabangan', 'talogtog', 'tonton', 'tumbar', 'wawa'
+                                            ] as $barangay)
+                                                <div class="col-md-4 col-sm-6">
+                                                    <div class="form-check">
+                                                        <input type="checkbox" id="barangay_{{ $barangay }}" name="selectedBarangays[]" value="{{ $barangay }}" class="form-check-input">
+                                                        <label for="barangay_{{ $barangay }}" class="form-check-label">{{ ucwords(str_replace('-', ' ', $barangay)) }}</label>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input type="checkbox" id="recipients_category" name="recipientTypes[]" value="category" class="form-check-input">
+                                        <label for="recipients_category" class="form-check-label">Filter by Category</label>
+                                    </div>
+                                    <p class="text-muted small mb-3 ms-4">Auto-select seniors based on system records</p>
+                                    <div id="categorySelection" class="ms-4" style="display:none;">
+                                        <h6 class="mb-3">Select Categories</h6>
+                                        <div class="d-flex flex-column gap-2">
+                                            <div class="form-check">
+                                                <input type="checkbox" id="category_pension" name="selectedCategories[]" value="pension" class="form-check-input">
+                                                <label for="category_pension" class="form-check-label"><strong>Pension Recipients</strong><br><small class="text-muted">Seniors listed in the pension table</small></label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input type="checkbox" id="category_id" name="selectedCategories[]" value="id_applicants" class="form-check-input">
+                                                <label for="category_id" class="form-check-label"><strong>ID Applicants</strong><br><small class="text-muted">Seniors from the ID application table</small></label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input type="checkbox" id="category_benefits" name="selectedCategories[]" value="benefit_applicants" class="form-check-input">
+                                                <label for="category_benefits" class="form-check-label"><strong>Benefit Applicants</strong><br><small class="text-muted">Seniors from the benefits table</small></label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="recipient_selection" name="recipient_selection" value="">
+                    </div>
+
                     <div class="form-actions">
                         <a href="{{ route('events') }}" class="btn btn-secondary">
                             <i class="fas fa-times"></i> Cancel
@@ -302,5 +381,58 @@
                 }
             }
         </style>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const recipientCheckboxes = document.querySelectorAll('input[name="recipientTypes[]"]');
+                const barangaySelection = document.getElementById('barangaySelection');
+                const categorySelection = document.getElementById('categorySelection');
+                const allSeniorsCheckbox = document.getElementById('recipients_all');
+                const barangayCheckbox = document.getElementById('recipients_barangay');
+                const categoryCheckbox = document.getElementById('recipients_category');
+                const allBarangaysCheckbox = document.getElementById('barangay_all');
+                const hiddenRecipientInput = document.getElementById('recipient_selection');
+
+                function updateVisibility() {
+                    barangaySelection.style.display = barangayCheckbox.checked ? 'block' : 'none';
+                    categorySelection.style.display = categoryCheckbox.checked ? 'block' : 'none';
+                }
+
+                recipientCheckboxes.forEach(cb => {
+                    cb.addEventListener('change', function() {
+                        if (this.value === 'all' && this.checked) {
+                            barangayCheckbox.checked = false;
+                            categoryCheckbox.checked = false;
+                        }
+                        if ((this.value === 'barangay' || this.value === 'category') && this.checked) {
+                            allSeniorsCheckbox.checked = false;
+                        }
+                        updateVisibility();
+                    });
+                });
+
+                if (allBarangaysCheckbox) {
+                    allBarangaysCheckbox.addEventListener('change', function() {
+                        const barangayCheckboxes = document.querySelectorAll('input[name="selectedBarangays[]"]');
+                        barangayCheckboxes.forEach(checkbox => { if (checkbox.value !== 'all') { checkbox.checked = this.checked; } });
+                    });
+                }
+
+                const form = document.querySelector('form.event-form');
+                form.addEventListener('submit', function(e) {
+                    const types = [];
+                    document.querySelectorAll('input[name="recipientTypes[]"]:checked').forEach(cb => types.push(cb.value));
+                    const data = { types: types, barangays: [], categories: [] };
+                    if (types.includes('barangay')) {
+                        document.querySelectorAll('input[name="selectedBarangays[]"]:checked').forEach(cb => data.barangays.push(cb.value));
+                    }
+                    if (types.includes('category')) {
+                        document.querySelectorAll('input[name="selectedCategories[]"]:checked').forEach(cb => data.categories.push(cb.value));
+                    }
+                    hiddenRecipientInput.value = JSON.stringify(data);
+                });
+
+                updateVisibility();
+            });
+        </script>
     </x-header>
 </x-sidebar>

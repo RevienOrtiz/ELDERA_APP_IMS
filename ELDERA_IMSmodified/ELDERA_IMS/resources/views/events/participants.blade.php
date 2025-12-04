@@ -16,7 +16,7 @@
                         </div>
                         <div class="event-detail-item">
                             <i class="fas fa-clock"></i>
-                            <span>{{ $event->start_time->format('g:i A') }}</span>
+                            <span>{{ (function($t){ if($t instanceof \Carbon\CarbonInterface) return $t->format('g:i A'); if(is_string($t) && $t!==''){ try { return \Carbon\Carbon::createFromFormat('H:i:s',$t)->format('g:i A'); } catch (\Throwable $e) { return 'N/A'; } } return 'N/A'; })($event->start_time) }}</span>
                         </div>
                         <div class="event-detail-item">
                             <i class="fas fa-map-marker-alt"></i>

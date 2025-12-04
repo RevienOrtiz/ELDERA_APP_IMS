@@ -48,25 +48,35 @@ class EventController extends Controller
                 'description' => 'nullable|string',
                 'event_type' => 'required|string|in:general,pension,health,id_claiming',
                 'event_date' => 'required|date|after_or_equal:today',
-                'start_time' => 'required|date_format:H:i',
-                'end_time' => 'nullable|date_format:H:i|after:start_time',
+                'start_time' => 'required|string',
+                'end_time' => 'nullable|string',
                 'location' => 'required|string|max:255',
                 'organizer' => 'nullable|string|max:255',
                 'contact_person' => 'nullable|string|max:255',
                 'contact_number' => 'nullable|string|max:20',
                 'requirements' => 'nullable|string',
                 // Recipient selection (JSON from UI)
-                'recipient_selection' => 'nullable|string',
+                'recipient_selection' => 'required|string',
             ]);
 
             try {
                 $eventDate = \Carbon\Carbon::parse($validatedData['event_date']);
+                $start = null; $end = null;
                 if (!empty($validatedData['start_time'])) {
-                    $validatedData['start_time'] = \Carbon\Carbon::parse($eventDate->format('Y-m-d') . ' ' . $validatedData['start_time'])->toDateTimeString();
+                    $start = \Carbon\Carbon::parse($eventDate->format('Y-m-d') . ' ' . $validatedData['start_time']);
+                    $validatedData['start_time'] = $start->toTimeString();
                 }
                 if (!empty($validatedData['end_time'])) {
-                    $validatedData['end_time'] = \Carbon\Carbon::parse($eventDate->format('Y-m-d') . ' ' . $validatedData['end_time'])->toDateTimeString();
+                    $end = \Carbon\Carbon::parse($eventDate->format('Y-m-d') . ' ' . $validatedData['end_time']);
+                    $validatedData['end_time'] = $end->toTimeString();
                 }
+                if ($start && $end && $end->lte($start)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'end_time' => 'End time must be after start time.'
+                    ]);
+                }
+            } catch (\Illuminate\Validation\ValidationException $ve) {
+                throw $ve;
             } catch (\Throwable $e) {
                 \Log::warning('Event time normalization failed', ['error' => $e->getMessage()]);
             }
@@ -87,6 +97,22 @@ class EventController extends Controller
                 } catch (\Throwable $e) {
                     \Log::warning('Invalid recipient_selection JSON on event store', ['error' => $e->getMessage()]);
                 }
+            }
+            // Validate selection: at least one type, and details for barangay/category when chosen
+            if (!is_array($recipientSelection) || empty($recipientSelection['types'])) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'recipient_selection' => 'Please select at least one recipient type.'
+                ]);
+            }
+            if (in_array('barangay', $recipientSelection['types'] ?? []) && empty($recipientSelection['barangays'])) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'recipient_selection' => 'Please select at least one barangay.'
+                ]);
+            }
+            if (in_array('category', $recipientSelection['types'] ?? []) && empty($recipientSelection['categories'])) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'recipient_selection' => 'Please select at least one category.'
+                ]);
             }
             if ($hasRecipientColumn) {
                 $validatedData['recipient_selection'] = is_array($recipientSelection) ? $recipientSelection : null;
@@ -177,85 +203,165 @@ class EventController extends Controller
     /**
      * Update the specified event in storage.
      */
-    public function update(Request $request, string $id): RedirectResponse
+    public function update(Request $request, string $id): JsonResponse|RedirectResponse
     {
         try {
             $event = Event::findOrFail($id);
 
+            // Allow lightweight status-only updates for AJAX requests
+            $isStatusOnlyUpdate = ($request->ajax() || $request->expectsJson())
+                && $request->has('status')
+                && !$request->has('title')
+                && !$request->has('event_type')
+                && !$request->has('event_date')
+                && !$request->has('start_time')
+                && !$request->has('location');
+
+            if ($isStatusOnlyUpdate) {
+                $statusData = $request->validate([
+                    'status' => 'required|string|in:upcoming,ongoing,completed,cancelled',
+                ]);
+
+                $event->update(['status' => $statusData['status']]);
+
+                if ($request->ajax() || $request->expectsJson()) {
+                    return response()->json([
+                        'success' => true,
+                        'event_id' => $event->id,
+                    ]);
+                }
+
+                return redirect()->route('events')
+                    ->with('success', 'Event status updated successfully!');
+            }
+
+            \Log::info('Event update request received', ['id' => $id, 'raw' => $request->all()]);
             $validatedData = $request->validate([
-                'title' => 'required|string|max:255',
+                'title' => 'sometimes|required|string|max:255',
                 'description' => 'nullable|string',
-                'event_type' => 'required|string|in:general,pension,health,id_claiming',
-                'event_date' => 'required|date',
-                'start_time' => 'required|date_format:H:i',
-                'end_time' => 'nullable|date_format:H:i|after:start_time',
-                'location' => 'required|string|max:255',
+                'event_type' => 'sometimes|required|string|in:general,pension,health,id_claiming',
+                'event_date' => 'sometimes|required|date',
+                'start_time' => 'sometimes|required|string',
+                'end_time' => 'nullable|string',
+                'location' => 'sometimes|required|string|max:255',
                 'organizer' => 'nullable|string|max:255',
                 'contact_person' => 'nullable|string|max:255',
                 'contact_number' => 'nullable|string|max:20',
                 'requirements' => 'nullable|string',
-                'status' => 'required|string|in:upcoming,ongoing,completed,cancelled',
-                'recipient_selection' => 'nullable|string',
+                'status' => 'sometimes|required|string|in:upcoming,ongoing,completed,cancelled',
+                // recipient_selection handled conditionally below to avoid overwriting when absent
             ]);
+            \Log::info('Event update validated data', ['id' => $id, 'data' => $validatedData]);
 
             try {
-                $eventDate = \Carbon\Carbon::parse($validatedData['event_date']);
-                if (!empty($validatedData['start_time'])) {
-                    $validatedData['start_time'] = \Carbon\Carbon::parse($eventDate->format('Y-m-d') . ' ' . $validatedData['start_time'])->toDateTimeString();
+                $eventDate = isset($validatedData['event_date']) ? \Carbon\Carbon::parse($validatedData['event_date']) : ($event->event_date ?? \Carbon\Carbon::now());
+                $start = null; $end = null;
+                if (array_key_exists('start_time', $validatedData) && !empty($validatedData['start_time'])) {
+                    $start = \Carbon\Carbon::parse($eventDate->format('Y-m-d') . ' ' . $validatedData['start_time']);
+                    $validatedData['start_time'] = $start->toTimeString();
                 }
-                if (!empty($validatedData['end_time'])) {
-                    $validatedData['end_time'] = \Carbon\Carbon::parse($eventDate->format('Y-m-d') . ' ' . $validatedData['end_time'])->toDateTimeString();
+                if (array_key_exists('end_time', $validatedData) && !empty($validatedData['end_time'])) {
+                    $end = \Carbon\Carbon::parse($eventDate->format('Y-m-d') . ' ' . $validatedData['end_time']);
+                    $validatedData['end_time'] = $end->toTimeString();
                 }
+                if ($start && $end && $end->lte($start)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'end_time' => 'End time must be after start time.'
+                    ]);
+                }
+            } catch (\Illuminate\Validation\ValidationException $ve) {
+                throw $ve;
             } catch (\Throwable $e) {
                 \Log::warning('Event time normalization failed on update', ['error' => $e->getMessage()]);
             }
 
-            // Normalize recipient_selection from request and save only if column exists
+            // Normalize recipient_selection only if provided; otherwise keep existing value
             $hasRecipientColumn = \Illuminate\Support\Facades\Schema::connection('eldera_ims')->hasColumn('events', 'recipient_selection');
-            $recipientSelectionRaw = $validatedData['recipient_selection'] ?? null;
             $recipientSelection = null;
-            if ($recipientSelectionRaw) {
-                try {
-                    $recipientSelection = json_decode($recipientSelectionRaw, true, 512, JSON_THROW_ON_ERROR);
-                } catch (\Throwable $e) {
-                    \Log::warning('Invalid recipient_selection JSON on event update', ['error' => $e->getMessage()]);
+            $shouldProcessRecipient = $request->has('recipient_selection');
+            if ($shouldProcessRecipient) {
+                $recipientSelectionRaw = $request->input('recipient_selection');
+                if ($recipientSelectionRaw !== null && $recipientSelectionRaw !== '') {
+                    try {
+                        $recipientSelection = json_decode($recipientSelectionRaw, true, 512, JSON_THROW_ON_ERROR);
+                    } catch (\Throwable $e) {
+                        \Log::warning('Invalid recipient_selection JSON on event update', ['error' => $e->getMessage()]);
+                    }
                 }
-            }
-            if ($hasRecipientColumn) {
-                $validatedData['recipient_selection'] = is_array($recipientSelection) ? $recipientSelection : null;
+                // Validate recipient selection when provided
+                if (!is_array($recipientSelection) || empty($recipientSelection['types'])) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'recipient_selection' => 'Please select at least one recipient type.'
+                    ]);
+                }
+                if (in_array('barangay', $recipientSelection['types'] ?? []) && empty($recipientSelection['barangays'])) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'recipient_selection' => 'Please select at least one barangay.'
+                    ]);
+                }
+                if (in_array('category', $recipientSelection['types'] ?? []) && empty($recipientSelection['categories'])) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'recipient_selection' => 'Please select at least one category.'
+                    ]);
+                }
+                if ($hasRecipientColumn) {
+                    // Only set when provided; if invalid JSON, set to null explicitly
+                    $validatedData['recipient_selection'] = is_array($recipientSelection) ? $recipientSelection : null;
+                } else {
+                    unset($validatedData['recipient_selection']);
+                }
             } else {
+                // Prevent accidental overwrite when field is absent
                 unset($validatedData['recipient_selection']);
             }
 
+            // If end_time was provided empty, normalize to null to satisfy TIME column
+            if (array_key_exists('end_time', $validatedData) && ($validatedData['end_time'] === '' || $validatedData['end_time'] === null)) {
+                $validatedData['end_time'] = null;
+            }
+
+            $before = $event->only(['title','description','event_type','event_date','start_time','end_time','location','organizer','contact_person','contact_number','status','requirements']);
             $event->update($validatedData);
-            if (is_array($recipientSelection)) {
-                $seniorIds = $this->resolveRecipientSeniorIds($recipientSelection);
-                if (!empty($seniorIds)) {
-                    $attachData = [];
-                    $now = now();
-                    $existingPivot = $event->participants()
-                        ->whereIn('seniors.id', $seniorIds)
-                        ->get()
-                        ->mapWithKeys(function ($participant) {
-                            return [$participant->id => (bool)$participant->pivot->attended];
-                        });
-                    foreach ($seniorIds as $sid) {
-                        $attachData[$sid] = [
-                            'registered_at' => $now,
-                            'attended' => (bool)($existingPivot[$sid] ?? false),
-                            'created_at' => $now,
-                            'updated_at' => $now,
-                        ];
+            $event->refresh();
+            $after = $event->only(['title','description','event_type','event_date','start_time','end_time','location','organizer','contact_person','contact_number','status','requirements']);
+            \Log::info('Event updated', ['id' => $event->id, 'before' => $before, 'after' => $after, 'changed' => $event->wasChanged()]);
+            try {
+                $hasParticipantsTable = \Illuminate\Support\Facades\Schema::connection('eldera_ims')->hasTable('event_participants');
+                if ($hasParticipantsTable && is_array($recipientSelection)) {
+                    $seniorIds = $this->resolveRecipientSeniorIds($recipientSelection);
+                    if (!empty($seniorIds)) {
+                        $attachData = [];
+                        $now = now();
+                        $existingPivot = $event->participants()
+                            ->whereIn('seniors.id', $seniorIds)
+                            ->get()
+                            ->mapWithKeys(function ($participant) {
+                                return [$participant->id => (bool)$participant->pivot->attended];
+                            });
+                        foreach ($seniorIds as $sid) {
+                            $attachData[$sid] = [
+                                'registered_at' => $now,
+                                'attended' => (bool)($existingPivot[$sid] ?? false),
+                                'created_at' => $now,
+                                'updated_at' => $now,
+                            ];
+                        }
+                        $event->participants()->sync($attachData);
+                        $event->update(['current_participants' => $event->participants()->count()]);
                     }
-                    $event->participants()->sync($attachData);
-                    $event->update(['current_participants' => $event->participants()->count()]);
+                } elseif (!$hasParticipantsTable) {
+                    \Log::warning('event_participants table missing on eldera_ims; skipping participant sync on update');
                 }
+            } catch (\Throwable $e) {
+                \Log::warning('Participant sync failed on event update', ['error' => $e->getMessage()]);
             }
 
             if ($request->ajax() || $request->expectsJson()) {
                 return response()->json([
                     'success' => true,
                     'event_id' => $event->id,
+                    'event' => $after,
+                    'changed' => $event->wasChanged(),
                 ]);
             }
 
@@ -263,13 +369,22 @@ class EventController extends Controller
                 ->with('success', 'Event updated successfully!');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return redirect()->back()
-                ->withErrors($e->errors())
-                ->withInput();
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error updating event: ' . $e->getMessage());
-            return redirect()->back()
-                ->with('error', 'An error occurred while updating the event. Please try again.');
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An error occurred while updating the event. Please try again.'
+                ], 500);
+            }
+            return redirect()->back()->with('error', 'An error occurred while updating the event. Please try again.');
         }
     }
 
@@ -482,9 +597,17 @@ class EventController extends Controller
                     'requirements' => $event->requirements,
                     'start' => $event->event_date->format('Y-m-d'),
                     'end' => $event->event_date->format('Y-m-d'),
-                    'time' => $event->start_time->format('H:i'),
+                    'time' => (function($t){
+                        if ($t instanceof \Carbon\CarbonInterface) return $t->format('H:i');
+                        if (is_string($t) && $t !== '') { try { return \Carbon\Carbon::createFromFormat('H:i:s', $t)->format('H:i'); } catch(\Throwable $e) { return null; } }
+                        return null;
+                    })($event->start_time),
                     // Include end_time for mobile app to show time range
-                    'end_time' => $event->end_time ? $event->end_time->format('H:i') : null,
+                    'end_time' => (function($t){
+                        if ($t instanceof \Carbon\CarbonInterface) return $t->format('H:i');
+                        if (is_string($t) && $t !== '') { try { return \Carbon\Carbon::createFromFormat('H:i:s', $t)->format('H:i'); } catch(\Throwable $e) { return null; } }
+                        return null;
+                    })($event->end_time),
                     'location' => $event->location,
                     'type' => $event->event_type,
                     'status' => $event->status,

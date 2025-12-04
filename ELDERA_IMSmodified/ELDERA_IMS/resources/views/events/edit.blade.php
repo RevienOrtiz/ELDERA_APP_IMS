@@ -92,7 +92,7 @@
                             <div class="form-group">
                                 <label for="start_time" class="form-label">Start Time *</label>
                                 <input type="time" id="start_time" name="start_time" class="form-control" 
-                                       value="{{ old('start_time', $event->start_time->format('H:i')) }}" required>
+                                       value="{{ old('start_time', (function($t){ if($t instanceof \Carbon\CarbonInterface) return $t->format('H:i'); if(is_string($t) && $t!==''){ try { return \Carbon\Carbon::createFromFormat('H:i:s',$t)->format('H:i'); } catch (\Throwable $e) { return ''; } } return ''; })($event->start_time)) }}" required>
                             </div>
                         </div>
 
@@ -100,7 +100,7 @@
                             <div class="form-group">
                                 <label for="end_time" class="form-label">End Time</label>
                                 <input type="time" id="end_time" name="end_time" class="form-control" 
-                                       value="{{ old('end_time', $event->end_time ? $event->end_time->format('H:i') : '') }}">
+                                       value="{{ old('end_time', (function($t){ if($t instanceof \Carbon\CarbonInterface) return $t->format('H:i'); if(is_string($t) && $t!==''){ try { return \Carbon\Carbon::createFromFormat('H:i:s',$t)->format('H:i'); } catch (\Throwable $e) { return ''; } } return ''; })($event->end_time)) }}">
                             </div>
                         </div>
                     </div>
