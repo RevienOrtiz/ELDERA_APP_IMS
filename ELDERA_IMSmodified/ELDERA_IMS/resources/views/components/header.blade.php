@@ -419,10 +419,44 @@
     body {
         background-color: ##fff5f5;
     }
-    
+
+    .page-loader {
+        position: fixed;
+        inset: 60px 0 0 250px;
+        background: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        box-sizing: border-box;
+    }
+
+    .loader {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        color: #333;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .page-loader { inset: 60px 0 0 0; }
+    }
+
+    body.page-ready .page-loader { display: none; }
+
 </style>
 </head>
 <body>
+    <div class="page-loader">
+        <div class="loader">Fetching data...</div>
+    </div>
 
     <div class="header">
         <div class="dashboard-title">
@@ -514,6 +548,17 @@
     @include('message.popup_message')
 
     <script>
+        (function(){
+            function ready(){
+                if(!document.body.classList.contains('page-ready')){
+                    document.body.classList.add('page-ready');
+                }
+            }
+            window.addEventListener('load', ready);
+            document.addEventListener('DOMContentLoaded', function(){
+                setTimeout(ready, 1000);
+            });
+        })();
         // Global Back Button: works across all pages
         function handleGlobalBack() {
             try {
