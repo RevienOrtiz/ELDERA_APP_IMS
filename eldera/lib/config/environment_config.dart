@@ -6,7 +6,7 @@ import '../services/secure_storage_service.dart';
 class EnvironmentConfig {
   static const String _environment = String.fromEnvironment(
     'ENVIRONMENT',
-    defaultValue: 'production',
+    defaultValue: 'development',
   );
 
   // Cached secure credentials

@@ -17,10 +17,10 @@ void main() {
 
     // Verify that the app title is correct.
     expect(find.text('Eldera Health'), findsOneWidget);
-    
+
     // Verify that the bottom navigation bar is present.
     expect(find.byType(BottomNavigationBar), findsOneWidget);
-    
+
     // Verify that the Home tab is selected by default.
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Notifications'), findsOneWidget);
