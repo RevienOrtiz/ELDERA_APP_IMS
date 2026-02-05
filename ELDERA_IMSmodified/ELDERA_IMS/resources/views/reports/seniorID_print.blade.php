@@ -289,12 +289,6 @@
         height: 320px;
         clip-path: polygon(100% 55%, 100% 100%, 0 100%);
     }
-
-    @media print {
-        @page { size: A4 portrait; margin: 8mm; }
-        html, body { margin: 0; padding: 0; }
-        .card-html { page-break-inside: avoid; break-inside: avoid; }
-    }
 </style>
 
 <div class="card-html {{ $isFront ? 'front' : 'back' }}">
